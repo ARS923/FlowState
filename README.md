@@ -14,11 +14,11 @@ Built for the **Google Gemini API Developer Competition 2024**
 
 | Component | Model | Purpose |
 |-----------|-------|---------|
-| **Inspector** | `gemini-2.0-flash` | Vision analysis & defect detection |
-| **Surgeon** | `gemini-2.0-flash` | Code patching & style fixes |
-| **Artist** | `gemini-2.0-flash-exp` / `imagen-3.0-generate-002` | Image generation (Nano Banana Pro) |
-| **EDU Mode** | `gemini-2.0-flash` | Interactive Q&A about design principles |
-| **Debug Mode** | `gemini-2.0-flash` | JavaScript error analysis & fixes |
+| **Inspector** | `gemini-3-pro-preview` | Vision analysis & defect detection |
+| **Surgeon** | `gemini-3-pro-preview` | Code patching & style fixes |
+| **Artist** | `gemini-3-pro-image-preview`| Image generation (Nano Banana Pro) |
+| **EDU Mode** | `gemini-3-pro-preview` | Interactive Q&A about design principles |
+| **Debug Mode** | `gemini-3-pro-preview` | JavaScript error analysis & fixes |
 
 ## What It Does
 
