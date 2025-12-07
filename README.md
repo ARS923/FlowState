@@ -197,4 +197,7 @@ Built by Andrew Smith, Efficient Frontier Labs, FlowState for the Google Gemini 
 
 ## License
 
-MIT
+BSL - 
+
+Change Date:          December 6, 2029 (4 years from release)
+Change License:       Apache License, Version 2.0
