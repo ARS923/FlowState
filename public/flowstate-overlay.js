@@ -4854,12 +4854,139 @@ ${knowledge.example}
     variationsBtn.textContent = '🎨 More';
   }
   
+  // =========================================================================
+  // CSS TO TAILWIND MAPPING
+  // =========================================================================
+
+  const tailwindMap = {
+    // Padding
+    'padding': {
+      '0px': 'p-0',
+      '4px': 'p-1',
+      '8px': 'p-2',
+      '12px': 'p-3',
+      '16px': 'p-4',
+      '20px': 'p-5',
+      '24px': 'p-6',
+      '32px': 'p-8',
+      '40px': 'p-10',
+      '48px': 'p-12',
+      '8px 16px': 'px-4 py-2',
+      '12px 24px': 'px-6 py-3',
+      '16px 32px': 'px-8 py-4',
+    },
+    // Border radius
+    'border-radius': {
+      '0px': 'rounded-none',
+      '2px': 'rounded-sm',
+      '4px': 'rounded',
+      '6px': 'rounded-md',
+      '8px': 'rounded-lg',
+      '12px': 'rounded-xl',
+      '16px': 'rounded-2xl',
+      '24px': 'rounded-3xl',
+      '9999px': 'rounded-full',
+    },
+    // Background colors
+    'background-color': {
+      '#000000': 'bg-black',
+      'rgb(0, 0, 0)': 'bg-black',
+      '#ffffff': 'bg-white',
+      'rgb(255, 255, 255)': 'bg-white',
+      '#D4FF00': 'bg-lime-400',
+      'rgb(212, 255, 0)': 'bg-lime-400',
+      '#0A0A0B': 'bg-zinc-950',
+      'rgb(10, 10, 11)': 'bg-zinc-950',
+      '#18181B': 'bg-zinc-900',
+      'rgb(24, 24, 27)': 'bg-zinc-900',
+      'transparent': 'bg-transparent',
+      'rgba(0, 0, 0, 0)': 'bg-transparent',
+    },
+    // Text colors
+    'color': {
+      '#000000': 'text-black',
+      'rgb(0, 0, 0)': 'text-black',
+      '#ffffff': 'text-white',
+      'rgb(255, 255, 255)': 'text-white',
+      '#FAFAFA': 'text-zinc-50',
+      'rgb(250, 250, 250)': 'text-zinc-50',
+      '#D4FF00': 'text-lime-400',
+      'rgb(212, 255, 0)': 'text-lime-400',
+      '#A1A1AA': 'text-zinc-400',
+      'rgb(161, 161, 170)': 'text-zinc-400',
+    },
+    // Font size
+    'font-size': {
+      '12px': 'text-xs',
+      '14px': 'text-sm',
+      '16px': 'text-base',
+      '18px': 'text-lg',
+      '20px': 'text-xl',
+      '24px': 'text-2xl',
+      '30px': 'text-3xl',
+      '36px': 'text-4xl',
+      '48px': 'text-5xl',
+    },
+    // Font weight
+    'font-weight': {
+      '100': 'font-thin',
+      '200': 'font-extralight',
+      '300': 'font-light',
+      '400': 'font-normal',
+      '500': 'font-medium',
+      '600': 'font-semibold',
+      '700': 'font-bold',
+      '800': 'font-extrabold',
+      '900': 'font-black',
+    },
+    // Box shadow (common patterns)
+    'box-shadow': {
+      'none': 'shadow-none',
+      '0 1px 2px 0 rgb(0 0 0 / 0.05)': 'shadow-sm',
+      '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)': 'shadow',
+      '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)': 'shadow-md',
+      '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)': 'shadow-lg',
+      '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)': 'shadow-xl',
+      '0 25px 50px -12px rgb(0 0 0 / 0.25)': 'shadow-2xl',
+    },
+  };
+
+  function cssToTailwind(property, value) {
+    // Normalize property name
+    const normalizedProp = property.replace(/([A-Z])/g, '-$1').toLowerCase();
+    const normalizedValue = value.trim().toLowerCase();
+
+    // Direct lookup
+    if (tailwindMap[normalizedProp]?.[value]) {
+      return tailwindMap[normalizedProp][value];
+    }
+    if (tailwindMap[normalizedProp]?.[normalizedValue]) {
+      return tailwindMap[normalizedProp][normalizedValue];
+    }
+
+    // Try to find closest match for numeric values
+    if (normalizedProp === 'padding' || normalizedProp === 'margin') {
+      const numMatch = value.match(/^(\d+)px$/);
+      if (numMatch) {
+        const num = parseInt(numMatch[1]);
+        const prefix = normalizedProp === 'padding' ? 'p' : 'm';
+        const sizes = { 0: 0, 4: 1, 8: 2, 12: 3, 16: 4, 20: 5, 24: 6, 32: 8, 40: 10, 48: 12 };
+        const closest = Object.keys(sizes).reduce((a, b) =>
+          Math.abs(b - num) < Math.abs(a - num) ? b : a
+        );
+        return `${prefix}-${sizes[closest]}`;
+      }
+    }
+
+    return null;
+  }
+
   function copyCss() {
     if (!selectedElement) return;
-    
+
     // Get the current variation's styles, or original computed styles
     let stylesToCopy = {};
-    
+
     if (currentVariation >= 0 && variationStyles[currentVariation]) {
       stylesToCopy = variationStyles[currentVariation].styles;
     } else {
@@ -4869,16 +4996,34 @@ ${knowledge.example}
         stylesToCopy[prop] = cs[prop];
       });
     }
-    
-    const css = Object.entries(stylesToCopy)
-      .filter(([_, val]) => val) // Skip empty values
-      .map(([prop, val]) => `${prop.replace(/([A-Z])/g, '-$1').toLowerCase()}: ${val};`)
-      .join('\n');
-    
-    navigator.clipboard.writeText(css).then(() => {
-      log('📋 CSS copied!', 'success');
+
+    // Build CSS output
+    const cssLines = [];
+    const tailwindClasses = [];
+
+    Object.entries(stylesToCopy)
+      .filter(([_, val]) => val)
+      .forEach(([prop, val]) => {
+        const cssProp = prop.replace(/([A-Z])/g, '-$1').toLowerCase();
+        cssLines.push(`${cssProp}: ${val};`);
+
+        const twClass = cssToTailwind(prop, val);
+        if (twClass) {
+          tailwindClasses.push(twClass);
+        }
+      });
+
+    // Build combined output
+    let output = '/* CSS */\n' + cssLines.join('\n');
+
+    if (tailwindClasses.length > 0) {
+      output += '\n\n/* Tailwind */\n' + tailwindClasses.join(' ');
+    }
+
+    navigator.clipboard.writeText(output).then(() => {
+      log('📋 CSS + Tailwind copied!', 'success');
       copyBtn.textContent = '✓ Copied!';
-      setTimeout(() => { copyBtn.textContent = '📋 Copy'; }, 1500);
+      setTimeout(() => { copyBtn.textContent = '📋'; }, 1500);
     });
   }
   
@@ -5048,14 +5193,16 @@ ${knowledge.example}
       return;
     }
     
-    isDrawing = true;
     const x = e.clientX;
     const y = e.clientY;
-    
+
     if (currentTool === 'text') {
+      e.preventDefault();
       createTextInput(x, y);
       return;
     }
+
+    isDrawing = true;
     
     currentAnnotation = {
       type: currentTool,
@@ -5108,7 +5255,8 @@ ${knowledge.example}
     input.style.top = y + 'px';
     input.placeholder = 'Add note...';
     document.body.appendChild(input);
-    input.focus();
+    // Use setTimeout to ensure the input is fully in the DOM before focusing
+    setTimeout(() => input.focus(), 0);
     
     const handleBlur = () => {
       const text = input.value.trim();
