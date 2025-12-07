@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Demo 3: Annotation & Drawing | FlowState</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Outfit', system-ui, sans-serif;
+      background: #0A0A0B;
+      color: #FAFAFA;
+      min-height: 100vh;
+    }
+
+    .demo-banner {
+      background: linear-gradient(90deg, #D4FF00 0%, #22C55E 100%);
+      color: #0A0A0B;
+      padding: 8px 16px;
+      font-size: 12px;
+      font-weight: 600;
+      text-align: center;
+    }
+
+    .demo-banner a {
+      color: #0A0A0B;
+      text-decoration: underline;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 48px;
+    }
+
+    .page-header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .page-header h1 {
+      font-size: 36px;
+      margin-bottom: 12px;
+    }
+
+    .page-header p {
+      color: #71717A;
+      font-size: 16px;
+    }
+
+    /* Messy Dashboard Grid - Perfect for annotations */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+
+    .widget {
+      background: #18181B;
+      border: 1px solid #27272A;
+      border-radius: 12px;
+      padding: 24px;
+    }
+
+    .widget-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .widget-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #A1A1AA;
+    }
+
+    .widget-badge {
+      font-size: 10px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      background: rgba(34, 197, 94, 0.15);
+      color: #22C55E;
+    }
+
+    .widget-value {
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .widget-change {
+      font-size: 12px;
+      color: #22C55E;
+    }
+
+    .widget-change.negative {
+      color: #EF4444;
+    }
+
+    /* Stats row - intentionally misaligned */
+    .stats-row {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      flex: 1;
+      background: #18181B;
+      border: 1px solid #27272A;
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    /* INTENTIONALLY BAD: Different padding on each card */
+    .stat-card:nth-child(1) { padding: 16px; }
+    .stat-card:nth-child(2) { padding: 24px; }
+    .stat-card:nth-child(3) { padding: 12px 20px; }
+    .stat-card:nth-child(4) { padding: 20px 16px; }
+
+    .stat-label {
+      font-size: 12px;
+      color: #71717A;
+      margin-bottom: 4px;
+    }
+
+    .stat-value {
+      font-size: 24px;
+      font-weight: 600;
+    }
+
+    /* INTENTIONALLY BAD: Inconsistent colors */
+    .stat-card:nth-child(1) .stat-value { color: #FAFAFA; }
+    .stat-card:nth-child(2) .stat-value { color: #D4FF00; }
+    .stat-card:nth-child(3) .stat-value { color: #22C55E; }
+    .stat-card:nth-child(4) .stat-value { color: #818CF8; }
+
+    /* User list with issues */
+    .user-list {
+      grid-column: span 2;
+    }
+
+    .user-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      border-bottom: 1px solid #27272A;
+    }
+
+    .user-item:last-child {
+      border-bottom: none;
+    }
+
+    .user-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #3F3F46;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+
+    .user-info {
+      flex: 1;
+    }
+
+    .user-name {
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 2px;
+    }
+
+    .user-email {
+      font-size: 12px;
+      color: #71717A;
+    }
+
+    /* INTENTIONALLY BAD: Misaligned buttons */
+    .user-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .action-btn {
+      padding: 6px 12px;
+      border-radius: 6px;
+      border: none;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    /* INTENTIONALLY BAD: Different button styles */
+    .action-btn.edit {
+      background: #3F3F46;
+      color: #FAFAFA;
+      padding: 8px 16px;
+      border-radius: 4px;
+    }
+
+    .action-btn.delete {
+      background: transparent;
+      color: #EF4444;
+      border: 1px solid #EF4444;
+      padding: 6px 10px;
+      border-radius: 8px;
+    }
+
+    /* Chart placeholder */
+    .chart-widget {
+      position: relative;
+      min-height: 200px;
+    }
+
+    .chart-placeholder {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      color: #52525B;
+    }
+
+    .chart-bars {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      height: 120px;
+      margin-top: 20px;
+    }
+
+    .chart-bar {
+      flex: 1;
+      background: linear-gradient(180deg, #D4FF00 0%, rgba(212, 255, 0, 0.3) 100%);
+      border-radius: 4px 4px 0 0;
+    }
+
+    /* Demo instructions */
+    .demo-instructions {
+      position: fixed;
+      bottom: 100px;
+      left: 24px;
+      background: #18181B;
+      border: 1px solid #3F3F46;
+      border-radius: 12px;
+      padding: 16px 20px;
+      max-width: 360px;
+      z-index: 1000;
+    }
+
+    .demo-instructions h3 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #D4FF00;
+    }
+
+    .demo-instructions ol {
+      font-size: 12px;
+      color: #A1A1AA;
+      padding-left: 16px;
+      line-height: 1.6;
+    }
+
+    .demo-instructions li {
+      margin-bottom: 4px;
+    }
+
+    .demo-instructions code {
+      background: #27272A;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 11px;
+    }
+
+    .tool-hints {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid #27272A;
+      font-size: 11px;
+      color: #71717A;
+    }
+
+    .tool-hints span {
+      display: inline-block;
+      margin-right: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="demo-banner">
+    Demo 3: Annotation & Drawing Tools | <a href="/demos/">Back to Demo Index</a>
+  </div>
+
+  <div class="container">
+    <div class="page-header">
+      <h1>Analytics Dashboard</h1>
+      <p>This messy dashboard has lots of inconsistencies - perfect for annotation demo!</p>
+    </div>
+
+    <!-- Stats Row with inconsistent padding -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">Total Users</div>
+        <div class="stat-value">12,847</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Revenue</div>
+        <div class="stat-value">$84.2k</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Conversion</div>
+        <div class="stat-value">3.2%</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Active Now</div>
+        <div class="stat-value">847</div>
+      </div>
+    </div>
+
+    <!-- Dashboard Grid -->
+    <div class="dashboard-grid">
+      <div class="widget">
+        <div class="widget-header">
+          <span class="widget-title">Monthly Revenue</span>
+          <span class="widget-badge">+12%</span>
+        </div>
+        <div class="widget-value">$42,850</div>
+        <div class="widget-change">↑ $4,200 from last month</div>
+      </div>
+
+      <div class="widget">
+        <div class="widget-header">
+          <span class="widget-title">New Signups</span>
+          <span class="widget-badge">+8%</span>
+        </div>
+        <div class="widget-value">1,247</div>
+        <div class="widget-change negative">↓ 3% vs target</div>
+      </div>
+
+      <div class="widget chart-widget">
+        <div class="widget-header">
+          <span class="widget-title">Weekly Trend</span>
+        </div>
+        <div class="chart-bars">
+          <div class="chart-bar" style="height: 60%"></div>
+          <div class="chart-bar" style="height: 80%"></div>
+          <div class="chart-bar" style="height: 45%"></div>
+          <div class="chart-bar" style="height: 90%"></div>
+          <div class="chart-bar" style="height: 70%"></div>
+          <div class="chart-bar" style="height: 85%"></div>
+          <div class="chart-bar" style="height: 95%"></div>
+        </div>
+      </div>
+
+      <!-- User list spanning 2 columns -->
+      <div class="widget user-list">
+        <div class="widget-header">
+          <span class="widget-title">Recent Users</span>
+        </div>
+        <div class="user-item">
+          <div class="user-avatar">👤</div>
+          <div class="user-info">
+            <div class="user-name">Sarah Connor</div>
+            <div class="user-email">sarah@skynet.com</div>
+          </div>
+          <div class="user-actions">
+            <button class="action-btn edit">Edit</button>
+            <button class="action-btn delete">Delete</button>
+          </div>
+        </div>
+        <div class="user-item">
+          <div class="user-avatar">👤</div>
+          <div class="user-info">
+            <div class="user-name">John Matrix</div>
+            <div class="user-email">john@commando.net</div>
+          </div>
+          <div class="user-actions">
+            <button class="action-btn edit">Edit</button>
+            <button class="action-btn delete">Delete</button>
+          </div>
+        </div>
+        <div class="user-item">
+          <div class="user-avatar">👤</div>
+          <div class="user-info">
+            <div class="user-name">Ellen Ripley</div>
+            <div class="user-email">ripley@weyland.corp</div>
+          </div>
+          <div class="user-actions">
+            <button class="action-btn edit">Edit</button>
+            <button class="action-btn delete">Delete</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="widget">
+        <div class="widget-header">
+          <span class="widget-title">Bounce Rate</span>
+        </div>
+        <div class="widget-value">24.8%</div>
+        <div class="widget-change">↓ 2.1% improvement</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="demo-instructions">
+    <h3>Demo Script (Annotation Tools)</h3>
+    <ol>
+      <li>Click FlowState FAB, then click <code>✏️ Annotate</code></li>
+      <li>Use <strong>Draw</strong> to circle inconsistent stat cards</li>
+      <li>Use <strong>Box</strong> to highlight misaligned buttons</li>
+      <li>Use <strong>Arrow</strong> to point from problem to problem</li>
+      <li>Use <strong>Text</strong> to add "Fix this!" labels</li>
+      <li>Click <code>✨ Heal All</code> to batch-fix annotations</li>
+    </ol>
+    <div class="tool-hints">
+      <span><code>D</code> Draw</span>
+      <span><code>B</code> Box</span>
+      <span><code>A</code> Arrow</span>
+      <span><code>T</code> Text</span>
+      <span><code>E</code> Eraser</span>
+      <span><code>Z</code> Undo</span>
+    </div>
+  </div>
+
+  <script src="/flowstate-overlay.js"></script>
+</body>
+</html>

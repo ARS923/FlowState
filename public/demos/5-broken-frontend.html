@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Demo 5: Debugging Broken Frontend | FlowState</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Outfit', system-ui, sans-serif;
+      background: #0A0A0B;
+      color: #FAFAFA;
+      min-height: 100vh;
+    }
+
+    .demo-banner {
+      background: linear-gradient(90deg, #EF4444 0%, #F59E0B 100%);
+      color: #FAFAFA;
+      padding: 8px 16px;
+      font-size: 12px;
+      font-weight: 600;
+      text-align: center;
+    }
+
+    .demo-banner a {
+      color: #FAFAFA;
+      text-decoration: underline;
+    }
+
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 48px;
+      border-bottom: 1px solid #27272A;
+    }
+
+    .logo {
+      font-size: 24px;
+      font-weight: 700;
+      color: #EF4444;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 32px;
+      align-items: center;
+    }
+
+    .nav-links a {
+      color: #A1A1AA;
+      text-decoration: none;
+      font-size: 14px;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover {
+      color: #FAFAFA;
+    }
+
+    .main-content {
+      padding: 48px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .hero {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .hero h1 {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+
+    .hero p {
+      color: #A1A1AA;
+      font-size: 18px;
+    }
+
+    .error-simulation {
+      background: #18181B;
+      border: 1px solid #27272A;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+
+    .error-simulation h3 {
+      font-size: 16px;
+      margin-bottom: 16px;
+      color: #EF4444;
+    }
+
+    .error-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .error-link {
+      display: block;
+      background: #27272A;
+      border: 1px solid #3F3F46;
+      color: #FAFAFA;
+      padding: 16px;
+      border-radius: 8px;
+      text-decoration: none;
+      text-align: center;
+      transition: all 0.2s;
+    }
+
+    .error-link:hover {
+      background: #3F3F46;
+      border-color: #EF4444;
+      transform: translateY(-2px);
+    }
+
+    .error-link .error-icon {
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
+
+    .error-link .error-name {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .error-link .error-desc {
+      font-size: 11px;
+      color: #71717A;
+    }
+
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin-top: 48px;
+    }
+
+    .product-card {
+      background: #18181B;
+      border: 1px solid #27272A;
+      border-radius: 12px;
+      padding: 20px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .product-card:hover {
+      border-color: #3F3F46;
+    }
+
+    .product-image {
+      width: 100%;
+      height: 120px;
+      background: #27272A;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #71717A;
+      font-size: 32px;
+    }
+
+    .product-name {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .product-price {
+      color: #D4FF00;
+      font-weight: 600;
+    }
+
+    /* INTENTIONALLY UGLY: Hero Banner */
+    .ugly-hero {
+      background: #1a1a1a;
+      padding: 20px;
+      margin-bottom: 24px;
+      border: 3px dashed #444;
+    }
+
+    .ugly-hero-image {
+      width: 100%;
+      height: 200px;
+      background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #555;
+      font-size: 14px;
+      margin-bottom: 16px;
+    }
+
+    .ugly-hero h2 {
+      color: #888;
+      font-size: 20px;
+      margin-bottom: 8px;
+    }
+
+    .ugly-hero p {
+      color: #555;
+      font-size: 12px;
+    }
+
+    /* INTENTIONALLY UGLY: Promo Banner - Bad Contrast */
+    .ugly-promo {
+      background: #3d3d00;
+      color: #4a4a00;
+      padding: 8px 12px;
+      font-size: 11px;
+      text-align: center;
+      margin-bottom: 24px;
+      border-radius: 2px;
+    }
+
+    /* INTENTIONALLY UGLY: Newsletter Signup */
+    .ugly-newsletter {
+      background: #0d0d0d;
+      border: 1px solid #1a1a1a;
+      padding: 15px;
+      margin-top: 24px;
+    }
+
+    .ugly-newsletter h4 {
+      color: #666;
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+
+    .ugly-newsletter input {
+      background: #111;
+      border: 1px solid #222;
+      color: #444;
+      padding: 6px 8px;
+      font-size: 11px;
+      width: 60%;
+      margin-right: 4px;
+    }
+
+    .ugly-newsletter button {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      color: #555;
+      padding: 6px 10px;
+      font-size: 10px;
+      cursor: pointer;
+    }
+
+    .cart-section {
+      margin-top: 48px;
+      padding: 24px;
+      background: #18181B;
+      border: 1px solid #27272A;
+      border-radius: 12px;
+    }
+
+    .cart-section h3 {
+      margin-bottom: 16px;
+    }
+
+    .cart-items {
+      min-height: 60px;
+      border: 1px dashed #3F3F46;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+      color: #71717A;
+      font-size: 14px;
+    }
+
+    /* INTENTIONALLY UGLY: Checkout Button */
+    .checkout-btn {
+      background: #2a2a2a;
+      color: #4a4a4a;
+      border: 1px solid #333;
+      padding: 8px 12px;
+      border-radius: 2px;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 400;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .checkout-btn:hover {
+      background: #333;
+    }
+
+    /* Demo instructions */
+    .demo-instructions {
+      position: fixed;
+      bottom: 100px;
+      left: 24px;
+      background: #18181B;
+      border: 1px solid #EF4444;
+      border-radius: 12px;
+      padding: 16px 20px;
+      max-width: 380px;
+      z-index: 1000;
+    }
+
+    .demo-instructions h3 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #EF4444;
+    }
+
+    .demo-instructions ol {
+      font-size: 12px;
+      color: #A1A1AA;
+      padding-left: 16px;
+      line-height: 1.6;
+    }
+
+    .demo-instructions li {
+      margin-bottom: 4px;
+    }
+
+    .demo-instructions code {
+      background: #27272A;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 11px;
+      color: #EF4444;
+    }
+
+    .demo-instructions .note {
+      margin-top: 12px;
+      padding: 8px 12px;
+      background: rgba(239, 68, 68, 0.1);
+      border-radius: 8px;
+      font-size: 11px;
+      color: #F87171;
+    }
+
+    /* Loading spinner for broken async */
+    .loading-spinner {
+      display: none;
+      width: 20px;
+      height: 20px;
+      border: 2px solid #3F3F46;
+      border-top-color: #D4FF00;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .loading .loading-spinner {
+      display: inline-block;
+    }
+  </style>
+</head>
+<body>
+  <div class="demo-banner">
+    Demo 5: Debugging Broken Frontend (Debug Mode) | <a href="/demos/">Back to Demo Index</a>
+  </div>
+
+  <nav class="navbar">
+    <div class="logo">BuggyShop</div>
+    <div class="nav-links">
+      <a href="#">Products</a>
+      <a href="#">Categories</a>
+      <a href="#">About</a>
+      <a href="#" id="cart-link">Cart (0)</a>
+    </div>
+  </nav>
+
+  <main class="main-content">
+    <!-- UGLY ELEMENT: Promo banner with terrible contrast -->
+    <div class="ugly-promo">
+      LIMITED TIME OFFER: Use code BUGGY20 for 20% off your first order!
+    </div>
+
+    <!-- UGLY ELEMENT: Hero banner with placeholder image (click to regenerate with Nano Banana Pro) -->
+    <div class="ugly-hero">
+      <img
+        src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='200' viewBox='0 0 800 200'%3E%3Crect fill='%231a1a1a' width='800' height='200'/%3E%3Ctext x='50%25' y='50%25' fill='%23444' font-family='sans-serif' font-size='16' text-anchor='middle' dy='.3em'%3E[Outdated Hero Image - Click to Regenerate with AI]%3C/text%3E%3C/svg%3E"
+        alt="Hero banner placeholder"
+        class="ugly-hero-image"
+        style="width: 100%; height: 200px; object-fit: cover; cursor: pointer;"
+        data-flowstate-image="true"
+      >
+      <h2>Black Friday Sale</h2>
+      <p>Shop the biggest deals of the year (hero image needs refresh)</p>
+    </div>
+
+    <div class="hero">
+      <h1>Welcome to BuggyShop</h1>
+      <p>A demo e-commerce page with intentional JavaScript errors</p>
+    </div>
+
+    <div class="error-simulation">
+      <h3>Error Triggers (Click to visit broken pages)</h3>
+      <div class="error-grid">
+        <a href="errors/reference-error.html" class="error-link">
+          <div class="error-icon">🔴</div>
+          <div class="error-name">ReferenceError</div>
+          <div class="error-desc">Undefined variable access</div>
+        </a>
+        <a href="errors/type-error.html" class="error-link">
+          <div class="error-icon">🟠</div>
+          <div class="error-name">TypeError</div>
+          <div class="error-desc">Method on null object</div>
+        </a>
+        <a href="errors/promise-rejection.html" class="error-link">
+          <div class="error-icon">🟡</div>
+          <div class="error-name">Promise Rejection</div>
+          <div class="error-desc">Unhandled async failure</div>
+        </a>
+        <a href="errors/json-parse-error.html" class="error-link">
+          <div class="error-icon">🟣</div>
+          <div class="error-name">JSON Parse Error</div>
+          <div class="error-desc">Invalid JSON syntax</div>
+        </a>
+        <a href="errors/network-error.html" class="error-link">
+          <div class="error-icon">🔵</div>
+          <div class="error-name">Network Error</div>
+          <div class="error-desc">Failed API request</div>
+        </a>
+        <a href="errors/multiple-errors.html" class="error-link">
+          <div class="error-icon">⚫</div>
+          <div class="error-name">Multiple Errors</div>
+          <div class="error-desc">Cascading failures</div>
+        </a>
+      </div>
+    </div>
+
+    <h2>Featured Products</h2>
+    <div class="product-grid" id="product-grid">
+      <div class="product-card" data-id="1">
+        <div class="product-image">📱</div>
+        <div class="product-name">Smart Phone X</div>
+        <div class="product-price" id="price-1">Loading...</div>
+      </div>
+      <div class="product-card" data-id="2">
+        <div class="product-image">💻</div>
+        <div class="product-name">Laptop Pro</div>
+        <div class="product-price" id="price-2">Loading...</div>
+      </div>
+      <div class="product-card" data-id="3">
+        <div class="product-image">🎧</div>
+        <div class="product-name">Wireless Headphones</div>
+        <div class="product-price" id="price-3">Loading...</div>
+      </div>
+    </div>
+
+    <div class="cart-section">
+      <h3>Shopping Cart <span class="loading-spinner" id="cart-spinner"></span></h3>
+      <div class="cart-items" id="cart-items">
+        Click a product to add it to cart
+      </div>
+      <button class="checkout-btn" id="checkout-btn">Proceed to Checkout</button>
+    </div>
+
+    <!-- UGLY ELEMENT: Newsletter signup with poor styling -->
+    <div class="ugly-newsletter">
+      <h4>Subscribe to our newsletter</h4>
+      <input type="email" placeholder="Enter your email...">
+      <button>Subscribe</button>
+    </div>
+  </main>
+
+  <div class="demo-instructions">
+    <h3>Demo Script</h3>
+    <ol>
+      <li><strong>Visual Healing:</strong> Click ugly elements (promo, checkout btn, newsletter) to fix them</li>
+      <li><strong>Image Gen:</strong> Click the hero image to regenerate with <code>Nano Banana Pro</code></li>
+      <li><strong>Debug Mode:</strong> Visit error pages, then click the <code>bug icon</code></li>
+      <li><strong>AI Analysis:</strong> Click <code>Analyze Errors</code> for diagnosis</li>
+    </ol>
+    <div class="note">
+      <strong>Ugly elements to fix:</strong> Promo banner (bad contrast), hero image (outdated), checkout button (too small), newsletter (poor styling)
+    </div>
+  </div>
+
+  <!-- Load FlowState FIRST so it can capture errors -->
+  <script src="/flowstate-overlay.js"></script>
+
+  <!-- Intentionally broken JavaScript -->
+  <script>
+    // =====================================================
+    // INTENTIONALLY BUGGY CODE FOR DEMO PURPOSES
+    // =====================================================
+
+    // Bug 1: This will fail because 'config' is not defined
+    function initializeApp() {
+      // Intentional error - accessing undefined variable
+      const apiUrl = config.API_URL; // ReferenceError: config is not defined
+    }
+
+    // Bug 2: TypeError - calling method on null
+    function loadProductPrices() {
+      const products = [
+        { id: 1, price: 999 },
+        { id: 2, price: 1499 },
+        { id: 3, price: 299 }
+      ];
+
+      products.forEach(product => {
+        // This will work
+        const priceEl = document.getElementById(`price-${product.id}`);
+        if (priceEl) {
+          priceEl.textContent = `$${product.price}`;
+        }
+      });
+
+      // But this will fail - trying to access property of undefined
+      const featuredProduct = products.find(p => p.id === 999);
+      // Intentional bug: accessing property of undefined
+      // console.log(featuredProduct.name); // Would cause TypeError
+    }
+
+    // Bug 3: Unhandled Promise Rejection
+    async function fetchUserData() {
+      // Simulate API call that fails
+      const response = await fetch('https://api.nonexistent-domain-12345.com/user');
+      return response.json();
+    }
+
+    // Bug 4: JSON Parse Error
+    function parseProductData() {
+      const invalidJson = '{ "name": "Product", price: 100 }'; // Invalid JSON (missing quotes)
+      return JSON.parse(invalidJson);
+    }
+
+    // Bug 5: Network error simulation
+    async function loadRecommendations() {
+      throw new Error('Failed to load recommendations: Network timeout after 30000ms');
+    }
+
+    // Cart functionality with bugs
+    let cart = [];
+
+    function addToCart(productId) {
+      // Bug: Accessing undefined property
+      const product = getProductById(productId);
+      cart.push({
+        id: product.id,
+        name: product.name,
+        price: product.price
+      });
+      updateCartDisplay();
+    }
+
+    function getProductById(id) {
+      // Returns undefined for missing products, causing errors downstream
+      const products = {
+        1: { id: 1, name: 'Smart Phone X', price: 999 },
+        2: { id: 2, name: 'Laptop Pro', price: 1499 },
+        3: { id: 3, name: 'Wireless Headphones', price: 299 }
+      };
+      return products[id]; // Will be undefined for invalid IDs
+    }
+
+    function updateCartDisplay() {
+      const cartEl = document.getElementById('cart-items');
+      const cartLink = document.getElementById('cart-link');
+
+      if (cart.length === 0) {
+        cartEl.textContent = 'Your cart is empty';
+      } else {
+        cartEl.innerHTML = cart.map(item =>
+          `<div>${item.name} - $${item.price}</div>`
+        ).join('');
+      }
+
+      cartLink.textContent = `Cart (${cart.length})`;
+    }
+
+    // =====================================================
+    // ERROR TRIGGERS ARE NOW SEPARATE PAGES
+    // See: /demos/errors/*.html
+    // =====================================================
+
+    // Product card click handlers
+    document.querySelectorAll('.product-card').forEach(card => {
+      card.addEventListener('click', function() {
+        const productId = parseInt(this.dataset.id);
+        try {
+          addToCart(productId);
+        } catch (e) {
+          console.error('Failed to add product to cart:', e.message);
+        }
+      });
+    });
+
+    // Checkout button with intentional error
+    document.getElementById('checkout-btn').addEventListener('click', function() {
+      if (cart.length === 0) {
+        console.warn('Cannot checkout with empty cart');
+        alert('Your cart is empty!');
+        return;
+      }
+
+      // Simulate checkout error
+      const spinner = document.getElementById('cart-spinner');
+      spinner.style.display = 'inline-block';
+
+      setTimeout(() => {
+        spinner.style.display = 'none';
+        throw new Error('Checkout failed: Payment processor unavailable (Error code: PAY_503)');
+      }, 1500);
+    });
+
+    // =====================================================
+    // INITIALIZE (with intentional startup warning)
+    // =====================================================
+
+    // Load prices (this works)
+    loadProductPrices();
+
+    // Log a warning on startup
+    console.warn('BuggyShop: Running in development mode with mock data');
+
+    // Simulate an async initialization error after page load
+    setTimeout(() => {
+      console.error('Analytics failed to initialize: Missing tracking ID');
+    }, 2000);
+  </script>
+</body>
+</html>

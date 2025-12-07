@@ -1,0 +1,40 @@
+{
+  "name": "flowstate",
+  "version": "1.0.0",
+  "description": "Visual Healing for Vibe Coders - Click it. Learn it. Fix it. Built with Google Gemini API.",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "server": "node server.js",
+    "test:inspector": "node agents/inspector.js",
+    "test:surgeon": "node agents/surgeon.js",
+    "test:artist": "node agents/artist.js"
+  },
+  "keywords": [
+    "gemini",
+    "google-ai",
+    "visual-linting",
+    "ui-design",
+    "css-fix",
+    "design-tools",
+    "developer-tools",
+    "ai-assistant"
+  ],
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.21.0",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {},
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

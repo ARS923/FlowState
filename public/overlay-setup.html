@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FlowState Overlay — Setup</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-base: #0A0A0B;
+      --bg-elevated: #111113;
+      --border: #27272A;
+      --text-primary: #FAFAFA;
+      --text-muted: #71717A;
+      --accent: #D4FF00;
+    }
+    
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg-base);
+      color: var(--text-primary);
+      min-height: 100vh;
+      padding: 60px 20px;
+    }
+    
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+    }
+    
+    .logo {
+      font-family: 'Syne', sans-serif;
+      font-size: 32px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      background: var(--accent);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+    
+    .tagline {
+      color: var(--text-muted);
+      font-size: 18px;
+      margin-bottom: 48px;
+    }
+    
+    h2 {
+      font-size: 20px;
+      font-weight: 600;
+      margin: 40px 0 16px;
+      color: var(--accent);
+    }
+    
+    p {
+      color: var(--text-muted);
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+    
+    .method {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    
+    .method-title {
+      font-weight: 600;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .method-title .badge {
+      font-size: 10px;
+      padding: 3px 8px;
+      border-radius: 100px;
+      background: var(--accent);
+      color: var(--bg-base);
+      font-weight: 700;
+    }
+    
+    code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      background: var(--bg-base);
+      padding: 12px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      display: block;
+      overflow-x: auto;
+      margin: 12px 0;
+    }
+    
+    .bookmarklet {
+      display: inline-block;
+      padding: 12px 24px;
+      background: var(--accent);
+      color: var(--bg-base);
+      font-weight: 600;
+      border-radius: 8px;
+      text-decoration: none;
+      margin: 12px 0;
+      cursor: grab;
+    }
+    
+    .bookmarklet:hover {
+      background: #E8FF4D;
+    }
+    
+    .instructions {
+      background: rgba(212, 255, 0, 0.05);
+      border: 1px solid rgba(212, 255, 0, 0.2);
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 16px;
+    }
+    
+    .instructions li {
+      color: var(--text-muted);
+      margin-left: 20px;
+      margin-bottom: 8px;
+      line-height: 1.5;
+    }
+    
+    .warning {
+      background: rgba(251, 191, 36, 0.1);
+      border: 1px solid rgba(251, 191, 36, 0.3);
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 24px;
+      color: #FBBF24;
+      font-size: 13px;
+    }
+    
+    .demo-section {
+      margin-top: 60px;
+      padding-top: 40px;
+      border-top: 1px solid var(--border);
+    }
+    
+    .demo-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 28px;
+      background: var(--accent);
+      color: var(--bg-base);
+      font-weight: 600;
+      font-size: 15px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      margin-top: 16px;
+    }
+    
+    .demo-btn:hover {
+      background: #E8FF4D;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">
+      <div class="logo-icon">🌊</div>
+      FlowState Overlay
+    </div>
+    <p class="tagline">Heal any element on any page. No copy-paste. Just click.</p>
+    
+    <h2>Installation</h2>
+    
+    <div class="method">
+      <div class="method-title">
+        Method 1: Script Tag
+        <span class="badge">RECOMMENDED</span>
+      </div>
+      <p>Add this to your development HTML file:</p>
+      <code>&lt;script src="http://localhost:3001/flowstate-overlay.js"&gt;&lt;/script&gt;</code>
+      <div class="instructions">
+        <ol>
+          <li>Make sure the FlowState server is running (<code style="display: inline; padding: 2px 6px;">npm run server</code>)</li>
+          <li>Add the script tag to your page's HTML</li>
+          <li>Refresh your page — look for the 🌊 button in the bottom-right</li>
+        </ol>
+      </div>
+    </div>
+    
+    <div class="method">
+      <div class="method-title">
+        Method 2: Bookmarklet
+      </div>
+      <p>Drag this button to your bookmarks bar:</p>
+      <a class="bookmarklet" href="javascript:(function(){if(window.__flowstateLoaded)return;var s=document.createElement('script');s.src='http://localhost:3001/flowstate-overlay.js';document.body.appendChild(s);})();">🌊 FlowState</a>
+      <div class="instructions">
+        <ol>
+          <li>Drag the button above to your browser's bookmarks bar</li>
+          <li>Navigate to any localhost page</li>
+          <li>Click the bookmarklet to inject FlowState</li>
+        </ol>
+      </div>
+    </div>
+    
+    <div class="method">
+      <div class="method-title">
+        Method 3: Console Paste
+      </div>
+      <p>Open DevTools (F12) and paste this in the console:</p>
+      <code>var s=document.createElement('script');s.src='http://localhost:3001/flowstate-overlay.js';document.body.appendChild(s);</code>
+    </div>
+    
+    <div class="warning">
+      <strong>⚠️ Note:</strong> The FlowState server must be running on port 3001 for the overlay to work. 
+      Run <code style="display: inline; padding: 2px 6px; background: rgba(0,0,0,0.3);">npm run server</code> in your FlowState directory.
+    </div>
+    
+    <h2>How to Use</h2>
+    <div class="instructions" style="background: var(--bg-elevated); border-color: var(--border);">
+      <ol>
+        <li><strong>Click the 🌊 button</strong> to enter FlowState mode</li>
+        <li><strong>Hover over elements</strong> — they'll highlight with a lime outline</li>
+        <li><strong>Click any element</strong> — instant local analysis + AI enhancement</li>
+        <li><strong>Click ⚡ Quick Fix</strong> on any defect to fix it immediately</li>
+        <li><strong>Toggle variations:</strong> Original → Healed → Minimal → Bold → Soft (or press 0-6)</li>
+        <li><strong>Click 🎨</strong> for more styles (Glass, Neon)</li>
+        <li><strong>Click ✏️</strong> to enter Annotation Mode (see below)</li>
+        <li><strong>Click 💾</strong> to export all changes as CSS</li>
+        <li><strong>Cmd/Ctrl+Z</strong> to undo any change</li>
+        <li><strong>Press Escape</strong> to exit any mode</li>
+      </ol>
+    </div>
+    
+    <h2>⚡ What's New</h2>
+    <div class="method">
+      <div class="method-title">
+        Instant Local Analysis
+        <span class="badge" style="background: #22C55E;">FAST</span>
+      </div>
+      <p>Results appear immediately using smart local heuristics. AI enhancement happens in background.</p>
+      <ul style="color: var(--text-muted); font-size: 13px; margin-top: 8px; margin-left: 20px;">
+        <li><strong>Design System Detection</strong> — learns patterns from your page</li>
+        <li><strong>Sibling Comparison</strong> — spots inconsistencies with nearby elements</li>
+        <li><strong>Quick Fix (⚡)</strong> — one-click fixes for common issues</li>
+        <li><strong>Undo Stack</strong> — Cmd/Ctrl+Z to revert changes</li>
+        <li><strong>Export CSS (💾)</strong> — download all changes as a CSS file</li>
+      </ul>
+    </div>
+    
+    <h2>✏️ Manual Edit Mode</h2>
+    <div class="method">
+      <div class="method-title">
+        Edit code yourself
+        <span class="badge">NEW</span>
+      </div>
+      <p>Click </> or press M to open the code editor. Edit CSS directly with live preview.</p>
+      <ul style="color: var(--text-muted); font-size: 13px; margin-top: 8px; margin-left: 20px;">
+        <li><strong>Live Preview</strong> — see changes as you type</li>
+        <li><strong>CSS or HTML tabs</strong> — edit what you need</li>
+        <li><strong>🤖 AI Suggest</strong> — let AI improve your CSS</li>
+        <li><strong>System Instructions</strong> — set design rules AI should follow</li>
+        <li><strong>Propagate Changes</strong> — apply to all similar elements</li>
+      </ul>
+    </div>
+    
+    <h2>🔄 Smart Propagation</h2>
+    <div class="method">
+      <div class="method-title">
+        Apply to similar elements
+        <span class="badge">NEW</span>
+      </div>
+      <p>When you change a button, FlowState finds all similar buttons and offers to update them too.</p>
+      <ul style="color: var(--text-muted); font-size: 13px; margin-top: 8px; margin-left: 20px;">
+        <li><strong>Auto-detect similar elements</strong> by class, tag, and visual style</li>
+        <li><strong>Preview before propagating</strong> — see what will change</li>
+        <li><strong>One-click apply</strong> — update the whole site</li>
+      </ul>
+    </div>
+    
+    <h2>📐 System Instructions</h2>
+    <div class="method">
+      <div class="method-title">
+        Set design rules
+        <span class="badge">NEW</span>
+      </div>
+      <p>Define your design system so AI suggestions follow your rules.</p>
+      <p style="color: var(--text-muted); font-size: 13px; margin-top: 8px;">
+        Example: <em>"Use 8px spacing scale. Primary color is #D4FF00. All buttons should have 12px 24px padding and 8px border-radius."</em>
+      </p>
+    </div>
+    
+    <h2>🎙️ Annotation Mode</h2>
+    <div class="method">
+      <div class="method-title">
+        Draw + Talk to your site
+        <span class="badge">NEW</span>
+      </div>
+      <p>Mark up your page like a designer giving feedback, then heal everything at once:</p>
+      <div class="instructions" style="margin-top: 12px;">
+        <ol>
+          <li><strong>Click ✏️</strong> in the panel footer to enter Annotation Mode</li>
+          <li><strong>Draw</strong> — Freehand circle problem areas</li>
+          <li><strong>Box</strong> — Select regions to analyze together</li>
+          <li><strong>Arrow</strong> — Point at specific issues</li>
+          <li><strong>Text</strong> — Add notes like "too small" or "wrong color"</li>
+          <li><strong>🎙️ Voice</strong> — Hold Space or click mic to talk: <em>"Make this button bigger"</em></li>
+          <li><strong>Click "✨ Heal All"</strong> — AI analyzes your annotations + voice</li>
+        </ol>
+      </div>
+      <p style="margin-top: 12px; font-size: 12px; color: var(--text-muted);">
+        <strong>Keyboard shortcuts:</strong><br>
+        <span style="color: #71717A;">Annotation:</span> V (select), D (draw), B (box), A (arrow), T (text), <strong style="color: #EF4444;">Space (hold to talk)</strong><br>
+        <span style="color: #71717A;">Variations:</span> 0 (original), 1-6 (variations)<br>
+        <span style="color: #71717A;">Actions:</span> M (manual edit), E (export CSS), Cmd/Ctrl+Z (undo), Esc (exit)
+      </p>
+    </div>
+    
+    <div class="demo-section">
+      <h2>Try It Now</h2>
+      <p>The overlay is already loaded on this page. Click the button below or the 🌊 in the corner.</p>
+      <button class="demo-btn" onclick="document.getElementById('flowstate-fab')?.click()">
+        🌊 Activate FlowState
+      </button>
+      
+      <div style="margin-top: 40px; padding: 24px; background: #16213e; border-radius: 12px; max-width: 400px;">
+        <h3 style="font-size: 18px; margin-bottom: 20px; color: white;">Sample Component</h3>
+        <p style="color: #a0a0a0; font-size: 14px; margin-bottom: 16px;">Try clicking elements OR use ✏️ annotation mode to circle multiple issues:</p>
+        <input type="text" placeholder="Click me to analyze" style="width: 100%; padding: 12px 16px; border: 1px solid #3a3a5c; border-radius: 8px; background: #0f0f23; color: white; margin-bottom: 12px; font-size: 14px;">
+        <input type="password" placeholder="Password field" style="width: 100%; padding: 12px 16px; border: 1px solid #3a3a5c; border-radius: 8px; background: #0f0f23; color: white; margin-bottom: 16px; font-size: 14px;">
+        <button style="background: #ff6b6b; color: #333; padding: 8px 12px; border-radius: 4px; border: none; font-size: 14px; cursor: pointer;">Broken Button — Click Me!</button>
+      </div>
+      
+      <div style="margin-top: 24px; padding: 16px; background: rgba(212, 255, 0, 0.05); border: 1px solid rgba(212, 255, 0, 0.2); border-radius: 8px; max-width: 400px;">
+        <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #D4FF00; margin-bottom: 8px;">Pro Tip</div>
+        <p style="font-size: 13px; color: #a0a0a0; line-height: 1.5;">Click <strong style="color: white;">✏️</strong>, draw a circle around the button, then <strong style="color: #EF4444;">hold Space</strong> and say <em>"make this bigger and match the input styling"</em>. Release, click <strong style="color: white;">✨ Heal All</strong>. Magic.</p>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Load the overlay on this page -->
+  <script src="/flowstate-overlay.js"></script>
+</body>
+</html>

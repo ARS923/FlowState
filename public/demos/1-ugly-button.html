@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Demo 1: Ugly Signup Button | FlowState</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Outfit', system-ui, sans-serif;
+      background: #0A0A0B;
+      color: #FAFAFA;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .demo-banner {
+      background: linear-gradient(90deg, #D4FF00 0%, #22C55E 100%);
+      color: #0A0A0B;
+      padding: 8px 16px;
+      font-size: 12px;
+      font-weight: 600;
+      text-align: center;
+    }
+
+    .demo-banner a {
+      color: #0A0A0B;
+      text-decoration: underline;
+    }
+
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 48px;
+      border-bottom: 1px solid #27272A;
+    }
+
+    .logo {
+      font-size: 24px;
+      font-weight: 700;
+      color: #D4FF00;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 32px;
+    }
+
+    .nav-links a {
+      color: #A1A1AA;
+      text-decoration: none;
+      font-size: 14px;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover {
+      color: #FAFAFA;
+    }
+
+    .main-content {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 48px;
+    }
+
+    .signup-card {
+      background: #18181B;
+      border: 1px solid #27272A;
+      border-radius: 16px;
+      padding: 48px;
+      max-width: 420px;
+      width: 100%;
+    }
+
+    .signup-card h1 {
+      font-size: 28px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .signup-card p {
+      color: #71717A;
+      font-size: 14px;
+      margin-bottom: 32px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 8px;
+      color: #D4D4D8;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 12px 16px;
+      background: #0A0A0B;
+      border: 1px solid #3F3F46;
+      border-radius: 8px;
+      color: #FAFAFA;
+      font-size: 14px;
+      font-family: inherit;
+      transition: border-color 0.2s;
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: #D4FF00;
+    }
+
+    .form-group input::placeholder {
+      color: #52525B;
+    }
+
+    /* INTENTIONALLY UGLY BUTTON - Perfect for demo */
+    .ugly-signup-btn {
+      width: 100%;
+      padding: 8px 12px;           /* Too small */
+      background: #666;            /* Boring gray */
+      border: none;
+      border-radius: 2px;          /* Sharp corners (doesn't match inputs) */
+      color: #ccc;                 /* Low contrast */
+      font-size: 12px;             /* Too small */
+      font-family: Arial;          /* Wrong font */
+      cursor: pointer;
+      margin-top: 8px;
+    }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin: 24px 0;
+    }
+
+    .divider::before,
+    .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: #27272A;
+    }
+
+    .divider span {
+      color: #52525B;
+      font-size: 12px;
+    }
+
+    .social-btn {
+      width: 100%;
+      padding: 12px 16px;
+      background: #0A0A0B;
+      border: 1px solid #3F3F46;
+      border-radius: 8px;
+      color: #D4D4D8;
+      font-size: 14px;
+      font-family: inherit;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+
+    .social-btn:hover {
+      border-color: #52525B;
+      background: #18181B;
+    }
+
+    .footer-text {
+      text-align: center;
+      margin-top: 24px;
+      font-size: 13px;
+      color: #71717A;
+    }
+
+    .footer-text a {
+      color: #D4FF00;
+      text-decoration: none;
+    }
+
+    /* Demo instructions overlay */
+    .demo-instructions {
+      position: fixed;
+      bottom: 100px;
+      left: 24px;
+      background: #18181B;
+      border: 1px solid #3F3F46;
+      border-radius: 12px;
+      padding: 16px 20px;
+      max-width: 320px;
+      z-index: 1000;
+    }
+
+    .demo-instructions h3 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #D4FF00;
+    }
+
+    .demo-instructions ol {
+      font-size: 12px;
+      color: #A1A1AA;
+      padding-left: 16px;
+      line-height: 1.6;
+    }
+
+    .demo-instructions li {
+      margin-bottom: 4px;
+    }
+
+    .demo-instructions code {
+      background: #27272A;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 11px;
+    }
+  </style>
+</head>
+<body>
+  <div class="demo-banner">
+    Demo 1: Ugly Signup Button | <a href="/demos/">Back to Demo Index</a>
+  </div>
+
+  <nav class="navbar">
+    <div class="logo">SaaS.co</div>
+    <div class="nav-links">
+      <a href="#">Features</a>
+      <a href="#">Pricing</a>
+      <a href="#">Docs</a>
+      <a href="#">Blog</a>
+    </div>
+  </nav>
+
+  <main class="main-content">
+    <div class="signup-card">
+      <h1>Create your account</h1>
+      <p>Start your 14-day free trial. No credit card required.</p>
+
+      <form>
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" placeholder="John Doe">
+        </div>
+
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" placeholder="john@example.com">
+        </div>
+
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" placeholder="Create a password">
+        </div>
+
+        <!-- THE UGLY BUTTON - Click this! -->
+        <button type="button" class="ugly-signup-btn" id="target-button">
+          sign up
+        </button>
+      </form>
+
+      <div class="divider">
+        <span>or continue with</span>
+      </div>
+
+      <button class="social-btn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+          <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+          <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+          <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+        </svg>
+        Continue with Google
+      </button>
+
+      <p class="footer-text">
+        Already have an account? <a href="#">Sign in</a>
+      </p>
+    </div>
+  </main>
+
+  <div class="demo-instructions">
+    <h3>Demo Script</h3>
+    <ol>
+      <li>Click the <strong>ugly gray "sign up" button</strong></li>
+      <li>FlowState detects: low contrast, wrong radius, small padding</li>
+      <li>Click <code>📚</code> to show the Learn panel</li>
+      <li>Apply the fix or use Quick Fix <code>⚡</code></li>
+      <li>Show the dramatic before/after!</li>
+    </ol>
+  </div>
+
+  <script src="/flowstate-overlay.js"></script>
+</body>
+</html>

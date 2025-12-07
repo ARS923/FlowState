@@ -1,0 +1,1159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FlowState — Visual Linter</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  
+  <!-- Babel for JSX transformation -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- html2canvas for screenshot -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  
+  <style>
+    :root {
+      --bg-base: #0A0A0B;
+      --bg-elevated: #111113;
+      --bg-sunken: #050506;
+      --border: #27272A;
+      --border-focus: #3F3F46;
+      --text-primary: #FAFAFA;
+      --text-secondary: #D4D4D8;
+      --text-muted: #71717A;
+      --text-faint: #52525B;
+      --accent: #D4FF00;
+      --accent-dim: rgba(212, 255, 0, 0.1);
+      --accent-hover: #E8FF4D;
+      --success: #22C55E;
+      --warning: #FBBF24;
+      --error: #EF4444;
+      --highlight: rgba(212, 255, 0, 0.3);
+      --highlight-border: var(--accent);
+    }
+    
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg-base);
+      color: var(--text-primary);
+      height: 100vh;
+      overflow: hidden;
+    }
+    
+    /* Animations */
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    @keyframes slideIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes highlightPulse {
+      0%, 100% { box-shadow: 0 0 0 2px var(--accent), 0 0 0 4px transparent; }
+      50% { box-shadow: 0 0 0 2px var(--accent), 0 0 0 8px rgba(212, 255, 0, 0.2); }
+    }
+    @keyframes scanline { 0% { top: -10%; } 100% { top: 110%; } }
+    
+    .slide-in { animation: slideIn 0.3s ease forwards; }
+    
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg-base); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    
+    /* Layout */
+    .container { display: flex; flex-direction: column; height: 100vh; }
+    
+    header {
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-elevated);
+      flex-shrink: 0;
+    }
+    
+    .logo {
+      font-family: 'Syne', sans-serif;
+      font-size: 20px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .logo-icon {
+      width: 26px;
+      height: 26px;
+      background: var(--accent);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+    
+    .header-actions { display: flex; align-items: center; gap: 10px; }
+    
+    .status-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 10px;
+      border-radius: 100px;
+      font-size: 11px;
+      font-weight: 500;
+      background: var(--bg-base);
+      border: 1px solid var(--border);
+    }
+    
+    .status-badge.inspecting { background: rgba(251, 191, 36, 0.1); border-color: rgba(251, 191, 36, 0.3); }
+    .status-badge.healing { background: var(--accent-dim); border-color: rgba(212, 255, 0, 0.3); }
+    .status-badge.success { background: rgba(34, 197, 94, 0.1); border-color: rgba(34, 197, 94, 0.3); }
+    .status-badge.error { background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.3); }
+    
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--text-faint);
+    }
+    
+    .status-badge.inspecting .status-dot,
+    .status-badge.healing .status-dot { background: var(--warning); animation: pulse 1s infinite; }
+    .status-badge.success .status-dot { background: var(--success); }
+    .status-badge.error .status-dot { background: var(--error); }
+    
+    /* Main Grid */
+    main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr auto;
+      gap: 1px;
+      background: var(--border);
+      overflow: hidden;
+    }
+    
+    /* Panel Styles */
+    .panel {
+      background: var(--bg-base);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    
+    .panel-header {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-elevated);
+      flex-shrink: 0;
+    }
+    
+    .panel-title {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .panel-title::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      background: var(--accent);
+      border-radius: 2px;
+    }
+    
+    /* Editor */
+    .editor-wrapper { flex: 1; position: relative; overflow: hidden; }
+    
+    #codeEditor {
+      width: 100%;
+      height: 100%;
+      padding: 12px;
+      border: none;
+      background: var(--bg-base);
+      color: var(--text-primary);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      resize: none;
+      outline: none;
+      tab-size: 2;
+    }
+    
+    #codeEditor::placeholder { color: var(--text-faint); }
+    
+    /* Preview */
+    .preview-panel { background: var(--bg-sunken); position: relative; }
+    
+    .preview-tabs {
+      display: flex;
+      gap: 2px;
+      background: var(--bg-base);
+      padding: 2px;
+      border-radius: 6px;
+    }
+    
+    .preview-tab {
+      padding: 4px 10px;
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--text-muted);
+      background: transparent;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    
+    .preview-tab:hover { color: var(--text-primary); }
+    .preview-tab.active { background: var(--bg-elevated); color: var(--accent); }
+    
+    .preview-wrapper {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      background: radial-gradient(circle at 30% 70%, rgba(212, 255, 0, 0.02) 0%, transparent 50%),
+                  linear-gradient(135deg, var(--bg-sunken) 0%, #0d0d10 100%);
+    }
+    
+    .preview-frame-container {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      inset: 0;
+      transition: opacity 0.2s;
+    }
+    
+    .preview-frame-container.hidden { opacity: 0; pointer-events: none; }
+    
+    .preview-frame {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: transparent;
+    }
+    
+    .preview-overlay {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(10, 10, 11, 0.9);
+      z-index: 10;
+    }
+    
+    .preview-overlay.active { display: flex; }
+    
+    .scan-effect {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      box-shadow: 0 0 20px var(--accent);
+      animation: scanline 1.5s ease-in-out infinite;
+    }
+    
+    .overlay-text {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+    
+    /* Results Panel */
+    .results-panel {
+      grid-column: 1 / -1;
+      background: var(--bg-elevated);
+      display: flex;
+      flex-direction: column;
+      max-height: 260px;
+      overflow: hidden;
+    }
+    
+    .results-panel.collapsed { max-height: 40px; }
+    
+    .results-header {
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    
+    .results-header:hover { background: var(--bg-base); }
+    
+    .results-count {
+      background: var(--warning);
+      color: var(--bg-base);
+      padding: 2px 6px;
+      border-radius: 100px;
+      font-size: 9px;
+      font-weight: 700;
+      margin-left: 6px;
+    }
+    
+    .results-count.success { background: var(--success); }
+    
+    .results-body {
+      flex: 1;
+      overflow: auto;
+      padding: 0 14px 14px;
+      display: flex;
+      gap: 14px;
+    }
+    
+    .results-panel.collapsed .results-body { display: none; }
+    
+    /* Defect Cards */
+    .defects-column { flex: 1.2; min-width: 0; overflow-y: auto; }
+    
+    .defect-card {
+      background: var(--bg-base);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-bottom: 6px;
+      cursor: pointer;
+      transition: all 0.15s;
+      position: relative;
+    }
+    
+    .defect-card:hover {
+      border-color: var(--accent);
+      background: var(--accent-dim);
+    }
+    
+    .defect-card.active {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent);
+    }
+    
+    .defect-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    
+    .defect-checkbox {
+      width: 14px;
+      height: 14px;
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      background: var(--bg-sunken);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    
+    .defect-checkbox.checked {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+    
+    .defect-checkbox.checked::after {
+      content: '✓';
+      font-size: 10px;
+      color: var(--bg-base);
+      font-weight: bold;
+    }
+    
+    .defect-element {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: var(--accent);
+      background: var(--accent-dim);
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+    
+    .defect-issue {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.4;
+      margin-bottom: 6px;
+    }
+    
+    .defect-meta {
+      font-size: 10px;
+      color: var(--text-muted);
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    
+    .defect-meta span { display: block; }
+    .defect-meta .expected { color: var(--success); }
+    .defect-meta .why { color: var(--text-faint); font-style: italic; }
+    
+    /* Diff Column */
+    .diff-column { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+    
+    .diff-block {
+      background: var(--bg-base);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .diff-header {
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--border);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    
+    .diff-content {
+      flex: 1;
+      overflow: auto;
+      padding: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      line-height: 1.5;
+    }
+    
+    .diff-line { padding: 1px 0; }
+    .diff-added { color: var(--success); }
+    .diff-removed { color: #F87171; text-decoration: line-through; opacity: 0.7; }
+    
+    .diff-actions {
+      padding: 10px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    
+    /* Buttons */
+    .btn {
+      padding: 8px 16px;
+      border-radius: 6px;
+      border: none;
+      font-size: 12px;
+      font-weight: 600;
+      font-family: 'Outfit', sans-serif;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    
+    .btn-primary { background: var(--accent); color: var(--bg-base); }
+    .btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-secondary { background: var(--bg-base); color: var(--text-primary); border: 1px solid var(--border); }
+    .btn-secondary:hover { border-color: var(--text-muted); }
+    .btn-ghost { background: transparent; color: var(--text-muted); padding: 4px 8px; font-size: 10px; }
+    .btn-ghost:hover { color: var(--text-primary); }
+    
+    /* Terminal */
+    .terminal-column { flex: 0.6; display: flex; flex-direction: column; gap: 8px; }
+    
+    .terminal {
+      background: var(--bg-sunken);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      line-height: 1.5;
+      flex: 1;
+      overflow-y: auto;
+    }
+    
+    .log-line { color: var(--text-muted); padding: 1px 0; }
+    .log-line.success { color: var(--success); }
+    .log-line.warning { color: var(--warning); }
+    .log-line.error { color: var(--error); }
+    .log-line.accent { color: var(--accent); }
+    
+    /* Asset Section */
+    .asset-section {
+      padding: 10px;
+      background: var(--accent-dim);
+      border: 1px solid rgba(212, 255, 0, 0.2);
+      border-radius: 6px;
+    }
+    
+    .asset-label {
+      color: var(--accent);
+      font-size: 9px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+    
+    .asset-prompt {
+      font-size: 11px;
+      color: var(--text-secondary);
+      line-height: 1.4;
+      margin-bottom: 8px;
+    }
+    
+    .asset-preview { margin-top: 8px; text-align: center; }
+    .asset-preview img { max-width: 100%; max-height: 80px; border-radius: 4px; }
+    
+    /* Empty State */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+    
+    .empty-icon { font-size: 28px; margin-bottom: 8px; opacity: 0.5; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo">
+        <div class="logo-icon">🌊</div>
+        FlowState
+      </div>
+      <div class="header-actions">
+        <div class="status-badge" id="statusBadge">
+          <div class="status-dot"></div>
+          <span id="statusText">Ready</span>
+        </div>
+        <button class="btn btn-primary" id="healBtn">✨ Heal</button>
+      </div>
+    </header>
+    
+    <main>
+      <!-- Code Editor -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Component</span>
+          <button class="btn btn-ghost" id="loadExampleBtn">Load Example</button>
+        </div>
+        <div class="editor-wrapper">
+          <textarea id="codeEditor" placeholder="// Paste your React component here..." spellcheck="false"></textarea>
+        </div>
+      </div>
+      
+      <!-- Preview -->
+      <div class="panel preview-panel">
+        <div class="panel-header">
+          <span class="panel-title">Preview</span>
+          <div class="preview-tabs">
+            <button class="preview-tab active" data-view="before">Before</button>
+            <button class="preview-tab" data-view="after">After</button>
+          </div>
+        </div>
+        <div class="preview-wrapper">
+          <div class="preview-frame-container" id="beforeContainer">
+            <iframe class="preview-frame" id="beforeFrame" sandbox="allow-scripts allow-same-origin"></iframe>
+          </div>
+          <div class="preview-frame-container hidden" id="afterContainer">
+            <iframe class="preview-frame" id="afterFrame" sandbox="allow-scripts allow-same-origin"></iframe>
+          </div>
+          <div class="preview-overlay" id="previewOverlay">
+            <div class="scan-effect"></div>
+            <span class="overlay-text">Analyzing...</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Results -->
+      <div class="results-panel" id="resultsPanel">
+        <div class="results-header" id="resultsHeader">
+          <span class="panel-title">
+            Flow Stream
+            <span class="results-count" id="resultsCount" style="display: none;">0</span>
+          </span>
+          <span class="btn btn-ghost" id="toggleResults">▼</span>
+        </div>
+        <div class="results-body" id="resultsBody">
+          <!-- Terminal -->
+          <div class="terminal-column">
+            <div class="terminal" id="terminal">
+              <div class="log-line">🌊 FlowState ready</div>
+            </div>
+            <div class="asset-section" id="assetSection" style="display: none;">
+              <div class="asset-label">Asset Needed</div>
+              <p class="asset-prompt" id="assetPrompt"></p>
+              <button class="btn btn-secondary" id="generateAssetBtn" style="width: 100%; font-size: 11px; padding: 6px;">
+                🎨 Generate Asset
+              </button>
+              <div class="asset-preview" id="assetPreview" style="display: none;">
+                <img id="assetImg" src="">
+              </div>
+            </div>
+          </div>
+          
+          <!-- Defects -->
+          <div class="defects-column" id="defectsColumn" style="display: none;"></div>
+          
+          <!-- Diff -->
+          <div class="diff-column" id="diffColumn" style="display: none;">
+            <div class="diff-block">
+              <div class="diff-header">
+                <span>Changes</span>
+                <span id="diffCount">0 lines</span>
+              </div>
+              <div class="diff-content" id="diffContent"></div>
+              <div class="diff-actions">
+                <button class="btn btn-primary" id="applyBtn" style="flex: 1;">Apply Selected</button>
+                <button class="btn btn-secondary" id="dismissBtn">✕</button>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Empty -->
+          <div class="empty-state" id="emptyState">
+            <div class="empty-icon">🔍</div>
+            <p>Results appear here</p>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+  
+  <script>
+    const API_BASE = 'http://localhost:3001';
+    
+    // DOM
+    const codeEditor = document.getElementById('codeEditor');
+    const beforeFrame = document.getElementById('beforeFrame');
+    const afterFrame = document.getElementById('afterFrame');
+    const beforeContainer = document.getElementById('beforeContainer');
+    const afterContainer = document.getElementById('afterContainer');
+    const previewOverlay = document.getElementById('previewOverlay');
+    const healBtn = document.getElementById('healBtn');
+    const statusBadge = document.getElementById('statusBadge');
+    const statusText = document.getElementById('statusText');
+    const terminal = document.getElementById('terminal');
+    const resultsPanel = document.getElementById('resultsPanel');
+    const resultsCount = document.getElementById('resultsCount');
+    const defectsColumn = document.getElementById('defectsColumn');
+    const diffColumn = document.getElementById('diffColumn');
+    const diffContent = document.getElementById('diffContent');
+    const diffCount = document.getElementById('diffCount');
+    const applyBtn = document.getElementById('applyBtn');
+    const dismissBtn = document.getElementById('dismissBtn');
+    const assetSection = document.getElementById('assetSection');
+    const assetPrompt = document.getElementById('assetPrompt');
+    const generateAssetBtn = document.getElementById('generateAssetBtn');
+    const assetPreview = document.getElementById('assetPreview');
+    const assetImg = document.getElementById('assetImg');
+    const emptyState = document.getElementById('emptyState');
+    const loadExampleBtn = document.getElementById('loadExampleBtn');
+    const toggleResults = document.getElementById('toggleResults');
+    const resultsHeader = document.getElementById('resultsHeader');
+    const previewTabs = document.querySelectorAll('.preview-tab');
+    
+    // State
+    let fixedCode = null;
+    let currentAssetPrompt = null;
+    let defects = [];
+    let selectedDefects = new Set();
+    let debounceTimer = null;
+    let activeDefectId = null;
+    
+    // Example
+    const EXAMPLE_CODE = `export default function SignupCard() {
+  return (
+    <div style={{
+      background: '#16213e',
+      borderRadius: '12px',
+      padding: '24px',
+      maxWidth: '400px',
+      margin: '40px auto',
+      fontFamily: 'system-ui, sans-serif'
+    }}>
+      <div style={{
+        width: '80px',
+        height: '80px',
+        background: '#2a2a4a',
+        borderRadius: '50%',
+        margin: '0 auto 20px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: '#555',
+        fontSize: '12px'
+      }}>No image</div>
+
+      <h2 style={{
+        margin: '0 0 20px 0',
+        fontSize: '18px',
+        color: 'white'
+      }}>Create Account</h2>
+
+      <div style={{ marginBottom: '16px' }}>
+        <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: '#a0a0a0' }}>Email</label>
+        <input type="email" placeholder="you@example.com" style={{
+          width: '100%', padding: '12px 16px', border: '1px solid #3a3a5c',
+          borderRadius: '8px', background: '#0f0f23', color: 'white', fontSize: '16px', boxSizing: 'border-box'
+        }} />
+      </div>
+
+      <div style={{ marginBottom: '16px' }}>
+        <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: '#a0a0a0' }}>Password</label>
+        <input type="password" placeholder="••••••••" style={{
+          width: '100%', padding: '12px 16px', border: '1px solid #3a3a5c',
+          borderRadius: '8px', background: '#0f0f23', color: 'white', fontSize: '16px', boxSizing: 'border-box'
+        }} />
+      </div>
+
+      <button style={{
+        background: '#ff6b6b', color: '#333', border: 'none',
+        padding: '8px 12px', borderRadius: '4px', fontSize: '14px', cursor: 'pointer', marginTop: '8px'
+      }}>Sign Up</button>
+    </div>
+  );
+}`;
+    
+    // Helpers
+    function setStatus(status) {
+      statusBadge.className = 'status-badge ' + status;
+      const texts = { '': 'Ready', 'inspecting': 'Inspecting...', 'healing': 'Healing...', 'success': 'Healed', 'error': 'Error' };
+      statusText.textContent = texts[status] || 'Ready';
+    }
+    
+    function log(msg, type = '') {
+      const line = document.createElement('div');
+      line.className = 'log-line ' + type;
+      line.textContent = msg;
+      terminal.appendChild(line);
+      terminal.scrollTop = terminal.scrollHeight;
+    }
+    
+    function clearLog() { terminal.innerHTML = ''; }
+    
+    // Preview rendering
+    function createPreviewHTML(code, highlightSelectors = []) {
+      try {
+        // Extract component name from export default before stripping
+        let componentName = 'MyComponent';
+        const exportMatch = code.match(/export\s+default\s+function\s+(\w+)/);
+        if (exportMatch) {
+          componentName = exportMatch[1];
+        }
+
+        // Strip export statements for browser compatibility
+        let processedCode = code.replace(/export\s+default\s+/g, '');
+        processedCode = processedCode.replace(/export\s+/g, '');
+
+        const transformed = Babel.transform(processedCode, { presets: ['react'], filename: 'component.jsx' }).code;
+        
+        const highlightCSS = highlightSelectors.length > 0 ? `
+          .flowstate-highlight {
+            outline: 2px solid #D4FF00 !important;
+            outline-offset: 2px !important;
+            animation: flowstate-pulse 1s ease-in-out infinite !important;
+          }
+          @keyframes flowstate-pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(212, 255, 0, 0.4); }
+            50% { box-shadow: 0 0 0 8px rgba(212, 255, 0, 0); }
+          }
+        ` : '';
+        
+        const highlightScript = highlightSelectors.length > 0 ? `
+          window.flowstateHighlight = function(selector, elementText) {
+            document.querySelectorAll('.flowstate-highlight').forEach(el => el.classList.remove('flowstate-highlight'));
+            if (!selector) return;
+            
+            let elements = document.querySelectorAll(selector);
+            if (elementText && elements.length > 1) {
+              elements = Array.from(elements).filter(el => el.textContent.includes(elementText));
+            }
+            elements.forEach(el => {
+              el.classList.add('flowstate-highlight');
+              el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            });
+          };
+          
+          window.flowstateClearHighlight = function() {
+            document.querySelectorAll('.flowstate-highlight').forEach(el => el.classList.remove('flowstate-highlight'));
+          };
+        ` : '';
+        
+        return `<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #1a1a2e; min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: 20px; }
+    input, button { font-family: inherit; }
+    ${highlightCSS}
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"><\/script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"><\/script>
+  <script>
+    ${highlightScript}
+    try {
+      ${transformed}
+      const root = ReactDOM.createRoot(document.getElementById('root'));
+      const Component = typeof ${componentName} !== 'undefined' ? ${componentName} :
+                        (typeof SignupCard !== 'undefined' ? SignupCard :
+                        (typeof MyComponent !== 'undefined' ? MyComponent : () => React.createElement('div', null, 'No component')));
+      root.render(React.createElement(Component));
+    } catch (e) {
+      document.body.innerHTML = '<pre style="color: #f87171; padding: 20px; font-size: 12px;">' + e.message + '</pre>';
+    }
+  <\/script>
+</body>
+</html>`;
+      } catch (e) {
+        return `<html><body style="background:#1a1a2e;color:#f87171;padding:20px;font-size:12px;"><pre>${e.message}</pre></body></html>`;
+      }
+    }
+    
+    function updatePreview(frame = beforeFrame, code = codeEditor.value, highlight = false) {
+      frame.srcdoc = createPreviewHTML(code, highlight ? defects.map(d => d.selector_hint) : []);
+    }
+    
+    function updateBothPreviews() {
+      updatePreview(beforeFrame, codeEditor.value, true);
+      if (fixedCode) {
+        updatePreview(afterFrame, fixedCode, false);
+      }
+    }
+    
+    // Highlight element in preview
+    function highlightElement(defect) {
+      if (!beforeFrame.contentWindow.flowstateHighlight) return;
+      beforeFrame.contentWindow.flowstateHighlight(defect.selector_hint, defect.element_text);
+    }
+    
+    function clearHighlight() {
+      if (beforeFrame.contentWindow.flowstateClearHighlight) {
+        beforeFrame.contentWindow.flowstateClearHighlight();
+      }
+    }
+    
+    // Screenshot preview
+    async function capturePreview() {
+      return new Promise((resolve, reject) => {
+        setTimeout(async () => {
+          try {
+            const iframeDoc = beforeFrame.contentDocument || beforeFrame.contentWindow.document;
+            const canvas = await html2canvas(iframeDoc.body, {
+              backgroundColor: '#1a1a2e', scale: 2, logging: false, useCORS: true
+            });
+            resolve(canvas.toDataURL('image/png').split(',')[1]);
+          } catch (e) { reject(e); }
+        }, 500);
+      });
+    }
+    
+    // Render defect cards
+    function renderDefects() {
+      defectsColumn.innerHTML = defects.map((d, i) => `
+        <div class="defect-card ${activeDefectId === d.id ? 'active' : ''}" data-id="${d.id}" data-index="${i}">
+          <div class="defect-header">
+            <div class="defect-checkbox ${selectedDefects.has(d.id) ? 'checked' : ''}" data-id="${d.id}"></div>
+            <span class="defect-element">&lt;${d.element}&gt;</span>
+          </div>
+          <div class="defect-issue">${escapeHtml(d.issue)}</div>
+          <div class="defect-meta">
+            ${d.expected ? `<span class="expected">→ ${escapeHtml(d.expected)}</span>` : ''}
+            ${d.why ? `<span class="why">${escapeHtml(d.why)}</span>` : ''}
+          </div>
+        </div>
+      `).join('');
+      
+      // Event listeners
+      defectsColumn.querySelectorAll('.defect-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+          if (e.target.classList.contains('defect-checkbox')) return;
+          const id = card.dataset.id;
+          const defect = defects.find(d => d.id === id);
+          
+          // Toggle active
+          document.querySelectorAll('.defect-card').forEach(c => c.classList.remove('active'));
+          card.classList.add('active');
+          activeDefectId = id;
+          
+          // Highlight in preview
+          highlightElement(defect);
+        });
+        
+        card.addEventListener('mouseleave', () => {
+          if (activeDefectId !== card.dataset.id) {
+            // Don't clear if this is the active card
+          }
+        });
+      });
+      
+      defectsColumn.querySelectorAll('.defect-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const id = checkbox.dataset.id;
+          if (selectedDefects.has(id)) {
+            selectedDefects.delete(id);
+            checkbox.classList.remove('checked');
+          } else {
+            selectedDefects.add(id);
+            checkbox.classList.add('checked');
+          }
+          updateApplyButton();
+        });
+      });
+    }
+    
+    function updateApplyButton() {
+      applyBtn.textContent = selectedDefects.size > 0 
+        ? `Apply ${selectedDefects.size} Fix${selectedDefects.size > 1 ? 'es' : ''}`
+        : 'Apply All';
+    }
+    
+    // Heal
+    async function heal() {
+      const code = codeEditor.value.trim();
+      if (!code) { log('⚠️ No code to heal', 'warning'); return; }
+      
+      // Reset
+      clearLog();
+      emptyState.style.display = 'none';
+      defectsColumn.style.display = 'none';
+      diffColumn.style.display = 'none';
+      assetSection.style.display = 'none';
+      resultsCount.style.display = 'none';
+      fixedCode = null;
+      defects = [];
+      selectedDefects.clear();
+      activeDefectId = null;
+      
+      resultsPanel.classList.remove('collapsed');
+      setStatus('inspecting');
+      previewOverlay.classList.add('active');
+      healBtn.disabled = true;
+      
+      log('👁️ Inspector: Capturing preview...');
+      
+      try {
+        const screenshot = await capturePreview();
+        log('   ✓ Screenshot captured', 'success');
+        log('👁️ Inspector: Analyzing UI...');
+        
+        const response = await fetch(`${API_BASE}/api/heal`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ screenshot, code, mimeType: 'image/png' })
+        });
+        
+        const result = await response.json();
+        previewOverlay.classList.remove('active');
+        
+        if (result.success) {
+          if (result.looks_good) {
+            setStatus('success');
+            log('✅ No defects found!', 'success');
+            resultsCount.textContent = '✓';
+            resultsCount.className = 'results-count success';
+            resultsCount.style.display = 'inline';
+          } else {
+            setStatus('healing');
+            
+            // Store defects (handle both formats)
+            defects = (result.defects || []).map((d, i) => {
+              if (typeof d === 'string') {
+                return { id: `defect-${i+1}`, element: 'unknown', element_text: null, selector_hint: '*', issue: d, expected: null, why: null };
+              }
+              return d;
+            });
+            
+            // Select all by default
+            defects.forEach(d => selectedDefects.add(d.id));
+            
+            log(`   Found ${defects.length} defects`, 'warning');
+            defects.forEach((d, i) => log(`   ${i+1}. ${d.issue.substring(0, 50)}...`));
+            
+            log('🩺 Surgeon: Generating fixes...');
+            
+            // Show defects
+            defectsColumn.style.display = 'block';
+            renderDefects();
+            
+            // Show diff
+            fixedCode = result.fixedCode;
+            if (fixedCode) {
+              showDiff(code, fixedCode);
+              updatePreview(afterFrame, fixedCode, false);
+              log(`✨ ${diffCount.textContent} ready to apply`, 'success');
+            }
+            
+            // Asset prompt
+            if (result.assetPrompt) {
+              currentAssetPrompt = result.assetPrompt;
+              assetSection.style.display = 'block';
+              assetPrompt.textContent = result.assetPrompt;
+              assetPreview.style.display = 'none';
+              log('🎨 Asset generation available', 'accent');
+            }
+            
+            resultsCount.textContent = defects.length;
+            resultsCount.className = 'results-count';
+            resultsCount.style.display = 'inline';
+            
+            setStatus('success');
+            log('🚀 Click defects to highlight • Toggle to select', 'success');
+            
+            // Enable after preview
+            previewTabs.forEach(t => t.classList.remove('active'));
+            previewTabs[0].classList.add('active');
+          }
+        } else {
+          throw new Error(result.error || 'Healing failed');
+        }
+      } catch (e) {
+        setStatus('error');
+        previewOverlay.classList.remove('active');
+        log(`❌ ${e.message}`, 'error');
+      }
+      
+      healBtn.disabled = false;
+    }
+    
+    function showDiff(original, fixed) {
+      const origLines = original.split('\n');
+      const fixedLines = fixed.split('\n');
+      const diffs = [];
+      const maxLen = Math.max(origLines.length, fixedLines.length);
+      
+      for (let i = 0; i < maxLen; i++) {
+        if (origLines[i] !== fixedLines[i]) {
+          if (origLines[i]) diffs.push({ type: 'removed', line: origLines[i] });
+          if (fixedLines[i]) diffs.push({ type: 'added', line: fixedLines[i] });
+        }
+      }
+      
+      if (diffs.length > 0) {
+        diffColumn.style.display = 'flex';
+        diffCount.textContent = `${diffs.length} lines`;
+        diffContent.innerHTML = diffs.slice(0, 25).map(d => 
+          `<div class="diff-line diff-${d.type}">${d.type === 'added' ? '+' : '-'} ${escapeHtml(d.line)}</div>`
+        ).join('') + (diffs.length > 25 ? `<div class="diff-line" style="color:var(--text-muted)">+${diffs.length - 25} more</div>` : '');
+        updateApplyButton();
+      }
+    }
+    
+    function applyFix() {
+      if (!fixedCode) return;
+      codeEditor.value = fixedCode;
+      updatePreview(beforeFrame, fixedCode, false);
+      diffColumn.style.display = 'none';
+      defectsColumn.style.display = 'none';
+      fixedCode = null;
+      defects = [];
+      selectedDefects.clear();
+      log('✅ Fix applied!', 'success');
+    }
+    
+    async function generateAsset() {
+      if (!currentAssetPrompt) return;
+      generateAssetBtn.disabled = true;
+      generateAssetBtn.textContent = '⏳ Generating...';
+      log('🎨 Generating asset...', 'accent');
+      
+      try {
+        const response = await fetch(`${API_BASE}/api/generate-asset`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: currentAssetPrompt, context: 'avatar', theme: 'dark' })
+        });
+        const result = await response.json();
+        
+        if (result.success && (result.image || result.url)) {
+          assetImg.src = result.image ? `data:${result.mimeType};base64,${result.image}` : result.url;
+          assetPreview.style.display = 'block';
+          log('✅ Asset ready!', 'success');
+        } else {
+          throw new Error(result.error || 'Failed');
+        }
+      } catch (e) {
+        log(`❌ ${e.message}`, 'error');
+      }
+      
+      generateAssetBtn.disabled = false;
+      generateAssetBtn.textContent = '🎨 Generate Asset';
+    }
+    
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+    
+    // Events
+    codeEditor.addEventListener('input', () => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => updatePreview(), 500);
+    });
+    
+    healBtn.addEventListener('click', heal);
+    applyBtn.addEventListener('click', applyFix);
+    dismissBtn.addEventListener('click', () => {
+      diffColumn.style.display = 'none';
+      fixedCode = null;
+    });
+    generateAssetBtn.addEventListener('click', generateAsset);
+    loadExampleBtn.addEventListener('click', () => {
+      codeEditor.value = EXAMPLE_CODE;
+      updatePreview();
+      log('📦 Example loaded', 'accent');
+    });
+    resultsHeader.addEventListener('click', () => {
+      resultsPanel.classList.toggle('collapsed');
+      toggleResults.textContent = resultsPanel.classList.contains('collapsed') ? '▲' : '▼';
+    });
+    
+    // Preview tabs (Before/After)
+    previewTabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        previewTabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        
+        const view = tab.dataset.view;
+        if (view === 'before') {
+          beforeContainer.classList.remove('hidden');
+          afterContainer.classList.add('hidden');
+        } else {
+          beforeContainer.classList.add('hidden');
+          afterContainer.classList.remove('hidden');
+        }
+      });
+    });
+    
+    // Init
+    updatePreview();
+  </script>
+</body>
+</html>

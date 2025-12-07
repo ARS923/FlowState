@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Multiple Errors Demo | FlowState Debug</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Outfit', system-ui, sans-serif;
+      background: #0A0A0B;
+      color: #FAFAFA;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .demo-banner {
+      background: linear-gradient(90deg, #18181B 0%, #3F3F46 50%, #18181B 100%);
+      color: #FAFAFA;
+      padding: 8px 16px;
+      font-size: 12px;
+      font-weight: 600;
+      text-align: center;
+      border-bottom: 1px solid #52525B;
+    }
+    .demo-banner a { color: #FAFAFA; text-decoration: underline; }
+    .content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 48px;
+      text-align: center;
+    }
+    .error-icon { font-size: 72px; margin-bottom: 24px; }
+    h1 { font-size: 36px; margin-bottom: 16px; color: #FAFAFA; }
+    .description {
+      color: #A1A1AA;
+      font-size: 16px;
+      max-width: 500px;
+      line-height: 1.6;
+      margin-bottom: 32px;
+    }
+    .error-timeline {
+      background: #18181B;
+      border: 1px solid #27272A;
+      border-radius: 12px;
+      padding: 24px;
+      max-width: 600px;
+      width: 100%;
+      margin-bottom: 32px;
+      text-align: left;
+    }
+    .error-timeline h3 {
+      font-size: 14px;
+      color: #71717A;
+      margin-bottom: 16px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .timeline-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid #27272A;
+    }
+    .timeline-item:last-child { border-bottom: none; }
+    .timeline-time {
+      font-family: 'SF Mono', monospace;
+      font-size: 12px;
+      color: #52525B;
+      min-width: 60px;
+    }
+    .timeline-error {
+      font-size: 13px;
+      color: #F87171;
+    }
+    .timeline-type {
+      font-size: 11px;
+      color: #71717A;
+      margin-top: 4px;
+    }
+    .back-link {
+      color: #D4FF00;
+      text-decoration: none;
+      font-weight: 600;
+      transition: opacity 0.2s;
+    }
+    .back-link:hover { opacity: 0.8; }
+    .instructions {
+      position: fixed;
+      bottom: 100px;
+      left: 24px;
+      background: #18181B;
+      border: 1px solid #52525B;
+      border-radius: 12px;
+      padding: 16px 20px;
+      max-width: 350px;
+      z-index: 1000;
+    }
+    .instructions h3 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #FAFAFA;
+    }
+    .instructions p {
+      font-size: 12px;
+      color: #A1A1AA;
+      line-height: 1.5;
+    }
+    .instructions code {
+      background: #27272A;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 11px;
+      color: #EF4444;
+    }
+  </style>
+</head>
+<body>
+  <div class="demo-banner">
+    Multiple Errors Demo | <a href="../5-broken-frontend.html">Back to Debug Demo</a> | <a href="../">All Demos</a>
+  </div>
+
+  <div class="content">
+    <div class="error-icon">⚫</div>
+    <h1>Cascading Failures</h1>
+    <p class="description">
+      This page triggers multiple errors in sequence - simulating a real-world scenario
+      where one failure leads to others. Watch the error count increase!
+    </p>
+
+    <div class="error-timeline">
+      <h3>Error Timeline</h3>
+      <div class="timeline-item">
+        <span class="timeline-time">+100ms</span>
+        <div>
+          <div class="timeline-error">Database connection failed: ECONNREFUSED</div>
+          <div class="timeline-type">Console Error</div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <span class="timeline-time">+200ms</span>
+        <div>
+          <div class="timeline-error">Component failed to mount: Missing required prop "userId"</div>
+          <div class="timeline-type">Uncaught Error</div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <span class="timeline-time">+300ms</span>
+        <div>
+          <div class="timeline-error">Authentication token expired</div>
+          <div class="timeline-type">Unhandled Promise Rejection</div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <span class="timeline-time">+400ms</span>
+        <div>
+          <div class="timeline-error">WebSocket connection closed unexpectedly</div>
+          <div class="timeline-type">Console Error</div>
+        </div>
+      </div>
+    </div>
+
+    <a href="../5-broken-frontend.html" class="back-link">← Back to Debug Demo</a>
+  </div>
+
+  <div class="instructions">
+    <h3>Debug Multiple Errors</h3>
+    <p>
+      Watch the <code>error badge</code> count up as errors occur.
+      Click the <code>bug icon</code> to see all captured errors and analyze them together.
+    </p>
+  </div>
+
+  <!-- Intentional Multiple Errors -->
+  <script>
+    // Trigger multiple errors in sequence
+    setTimeout(() => {
+      console.error('Database connection failed: ECONNREFUSED');
+    }, 100);
+
+    setTimeout(() => {
+      throw new Error('Component failed to mount: Missing required prop "userId"');
+    }, 200);
+
+    setTimeout(() => {
+      Promise.reject(new Error('Authentication token expired'));
+    }, 300);
+
+    setTimeout(() => {
+      console.error('WebSocket connection closed unexpectedly');
+    }, 400);
+  </script>
+
+  <script src="/flowstate-overlay.js"></script>
+</body>
+</html>

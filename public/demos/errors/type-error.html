@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TypeError Demo | FlowState Debug</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Outfit', system-ui, sans-serif;
+      background: #0A0A0B;
+      color: #FAFAFA;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .demo-banner {
+      background: linear-gradient(90deg, #F59E0B 0%, #EF4444 100%);
+      color: #FAFAFA;
+      padding: 8px 16px;
+      font-size: 12px;
+      font-weight: 600;
+      text-align: center;
+    }
+    .demo-banner a { color: #FAFAFA; text-decoration: underline; }
+    .content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 48px;
+      text-align: center;
+    }
+    .error-icon { font-size: 72px; margin-bottom: 24px; }
+    h1 { font-size: 36px; margin-bottom: 16px; color: #F59E0B; }
+    .description {
+      color: #A1A1AA;
+      font-size: 16px;
+      max-width: 500px;
+      line-height: 1.6;
+      margin-bottom: 32px;
+    }
+    .code-block {
+      background: #18181B;
+      border: 1px solid #27272A;
+      border-radius: 12px;
+      padding: 24px;
+      font-family: 'SF Mono', monospace;
+      font-size: 14px;
+      color: #FBBF24;
+      text-align: left;
+      max-width: 600px;
+      width: 100%;
+      margin-bottom: 32px;
+    }
+    .code-block .comment { color: #71717A; }
+    .back-link {
+      color: #D4FF00;
+      text-decoration: none;
+      font-weight: 600;
+      transition: opacity 0.2s;
+    }
+    .back-link:hover { opacity: 0.8; }
+    .instructions {
+      position: fixed;
+      bottom: 100px;
+      left: 24px;
+      background: #18181B;
+      border: 1px solid #F59E0B;
+      border-radius: 12px;
+      padding: 16px 20px;
+      max-width: 350px;
+      z-index: 1000;
+    }
+    .instructions h3 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #F59E0B;
+    }
+    .instructions p {
+      font-size: 12px;
+      color: #A1A1AA;
+      line-height: 1.5;
+    }
+    .instructions code {
+      background: #27272A;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 11px;
+      color: #F59E0B;
+    }
+  </style>
+</head>
+<body>
+  <div class="demo-banner">
+    TypeError Demo | <a href="../5-broken-frontend.html">Back to Debug Demo</a> | <a href="../">All Demos</a>
+  </div>
+
+  <div class="content">
+    <div class="error-icon">🟠</div>
+    <h1>TypeError</h1>
+    <p class="description">
+      This page contains an intentional TypeError - calling a method on a null object.
+      This is one of the most common JavaScript errors in frontend development.
+    </p>
+
+    <div class="code-block">
+      <span class="comment">// This will throw a TypeError</span><br>
+      const obj = null;<br>
+      obj.someMethod();<br><br>
+      <span class="comment">// Error: Cannot read properties of null</span>
+    </div>
+
+    <a href="../5-broken-frontend.html" class="back-link">← Back to Debug Demo</a>
+  </div>
+
+  <div class="instructions">
+    <h3>Debug This Error</h3>
+    <p>
+      Look at the <code>error badge</code> on the FlowState panel.
+      Click the <code>bug icon</code> to enter Debug Mode and analyze this error with AI.
+    </p>
+  </div>
+
+  <!-- Intentional TypeError -->
+  <script>
+    // This will throw: TypeError: Cannot read properties of null
+    const obj = null;
+    obj.someMethod();
+  </script>
+
+  <script src="/flowstate-overlay.js"></script>
+</body>
+</html>

@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FlowState — Visual Linter</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  
+  <!-- Babel for JSX transformation -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- html2canvas for screenshot -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  
+  <style>
+    :root {
+      --bg-base: #0A0A0B;
+      --bg-elevated: #111113;
+      --bg-sunken: #050506;
+      --border: #27272A;
+      --border-focus: #3F3F46;
+      --text-primary: #FAFAFA;
+      --text-secondary: #D4D4D8;
+      --text-muted: #71717A;
+      --text-faint: #52525B;
+      --accent: #D4FF00;
+      --accent-dim: rgba(212, 255, 0, 0.1);
+      --accent-hover: #E8FF4D;
+      --success: #22C55E;
+      --warning: #FBBF24;
+      --error: #EF4444;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg-base);
+      color: var(--text-primary);
+      height: 100vh;
+      overflow: hidden;
+    }
+    
+    /* Animations */
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    @keyframes healPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(212, 255, 0, 0.4); }
+      50% { box-shadow: 0 0 0 10px rgba(212, 255, 0, 0); }
+    }
+    
+    @keyframes scanline {
+      0% { top: -10%; }
+      100% { top: 110%; }
+    }
+    
+    .heal-pulse { animation: healPulse 2s infinite; }
+    .slide-in { animation: slideIn 0.3s ease forwards; }
+    
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: var(--bg-base); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-faint); }
+    
+    /* Layout */
+    .container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    
+    header {
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-elevated);
+      flex-shrink: 0;
+    }
+    
+    .logo {
+      font-family: 'Syne', sans-serif;
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .logo-icon {
+      width: 28px;
+      height: 28px;
+      background: var(--accent);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+    
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .status-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      border-radius: 100px;
+      font-size: 12px;
+      font-weight: 500;
+      background: var(--bg-base);
+      border: 1px solid var(--border);
+    }
+    
+    .status-badge.inspecting { background: rgba(251, 191, 36, 0.1); border-color: rgba(251, 191, 36, 0.3); }
+    .status-badge.healing { background: var(--accent-dim); border-color: rgba(212, 255, 0, 0.3); }
+    .status-badge.success { background: rgba(34, 197, 94, 0.1); border-color: rgba(34, 197, 94, 0.3); }
+    .status-badge.error { background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.3); }
+    
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--text-faint);
+    }
+    
+    .status-badge.inspecting .status-dot { background: var(--warning); animation: pulse 1s infinite; }
+    .status-badge.healing .status-dot { background: var(--accent); animation: pulse 1s infinite; }
+    .status-badge.success .status-dot { background: var(--success); }
+    .status-badge.error .status-dot { background: var(--error); }
+    
+    /* Main Layout - CodePen Style */
+    main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr auto;
+      gap: 1px;
+      background: var(--border);
+      overflow: hidden;
+    }
+    
+    /* Editor Panel */
+    .editor-panel {
+      background: var(--bg-base);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    
+    .panel-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-elevated);
+      flex-shrink: 0;
+    }
+    
+    .panel-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .panel-title::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      background: var(--accent);
+      border-radius: 2px;
+    }
+    
+    .editor-wrapper {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    #codeEditor {
+      width: 100%;
+      height: 100%;
+      padding: 16px;
+      border: none;
+      background: var(--bg-base);
+      color: var(--text-primary);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      resize: none;
+      outline: none;
+      tab-size: 2;
+    }
+    
+    #codeEditor::placeholder {
+      color: var(--text-faint);
+    }
+    
+    /* Preview Panel */
+    .preview-panel {
+      background: var(--bg-sunken);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
+    
+    .preview-wrapper {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      background: 
+        radial-gradient(circle at 30% 70%, rgba(212, 255, 0, 0.02) 0%, transparent 50%),
+        linear-gradient(135deg, var(--bg-sunken) 0%, #0d0d10 100%);
+    }
+    
+    #previewFrame {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: transparent;
+    }
+    
+    .preview-overlay {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(10, 10, 11, 0.9);
+      z-index: 10;
+    }
+    
+    .preview-overlay.active {
+      display: flex;
+    }
+    
+    .scan-effect {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      box-shadow: 0 0 20px var(--accent);
+      animation: scanline 1.5s ease-in-out infinite;
+    }
+    
+    .overlay-text {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+    
+    /* Results Panel */
+    .results-panel {
+      grid-column: 1 / -1;
+      background: var(--bg-elevated);
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      max-height: 280px;
+      overflow: hidden;
+    }
+    
+    .results-panel.collapsed {
+      max-height: 48px;
+    }
+    
+    .results-header {
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    
+    .results-header:hover {
+      background: var(--bg-base);
+    }
+    
+    .results-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .results-count {
+      background: var(--warning);
+      color: var(--bg-base);
+      padding: 2px 8px;
+      border-radius: 100px;
+      font-size: 10px;
+      font-weight: 700;
+    }
+    
+    .results-count.success {
+      background: var(--success);
+    }
+    
+    .results-body {
+      flex: 1;
+      overflow: auto;
+      padding: 0 16px 16px;
+      display: flex;
+      gap: 16px;
+    }
+    
+    .results-panel.collapsed .results-body {
+      display: none;
+    }
+    
+    /* Defects Column */
+    .defects-column {
+      flex: 1;
+      min-width: 0;
+    }
+    
+    .defect-card {
+      background: var(--bg-base);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-size: 12px;
+      line-height: 1.5;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+      position: relative;
+      padding-left: 24px;
+    }
+    
+    .defect-dot {
+      position: absolute;
+      left: 10px;
+      top: 16px;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--warning);
+    }
+    
+    /* Diff Column */
+    .diff-column {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .diff-block {
+      background: var(--bg-base);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .diff-header {
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    
+    .diff-content {
+      flex: 1;
+      overflow: auto;
+      padding: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      line-height: 1.6;
+    }
+    
+    .diff-line { padding: 1px 0; }
+    .diff-added { color: var(--success); }
+    .diff-removed { color: #F87171; text-decoration: line-through; opacity: 0.7; }
+    
+    .diff-actions {
+      padding: 12px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    
+    /* Buttons */
+    .btn {
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: none;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: 'Outfit', sans-serif;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    
+    .btn-primary {
+      background: var(--accent);
+      color: var(--bg-base);
+    }
+    
+    .btn-primary:hover:not(:disabled) {
+      background: var(--accent-hover);
+      transform: translateY(-1px);
+    }
+    
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .btn-secondary {
+      background: var(--bg-base);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+    }
+    
+    .btn-secondary:hover {
+      border-color: var(--text-muted);
+    }
+    
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-muted);
+      padding: 6px 10px;
+      font-size: 11px;
+    }
+    
+    .btn-ghost:hover {
+      color: var(--text-primary);
+    }
+    
+    .btn-heal {
+      padding: 10px 24px;
+      font-size: 14px;
+    }
+    
+    /* Terminal Log */
+    .terminal {
+      background: var(--bg-sunken);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      line-height: 1.6;
+      max-height: 120px;
+      overflow-y: auto;
+      margin-top: 8px;
+    }
+    
+    .log-line {
+      color: var(--text-muted);
+      padding: 2px 0;
+    }
+    
+    .log-line.success { color: var(--success); }
+    .log-line.warning { color: var(--warning); }
+    .log-line.error { color: var(--error); }
+    .log-line.accent { color: var(--accent); }
+    
+    /* Asset Section */
+    .asset-section {
+      margin-top: 12px;
+      padding: 12px;
+      background: var(--accent-dim);
+      border: 1px solid rgba(212, 255, 0, 0.2);
+      border-radius: 8px;
+    }
+    
+    .asset-prompt {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 10px;
+      line-height: 1.5;
+    }
+    
+    .asset-preview {
+      margin-top: 10px;
+      text-align: center;
+    }
+    
+    .asset-preview img {
+      max-width: 100%;
+      max-height: 100px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+    
+    /* Empty State */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+    
+    .empty-icon {
+      font-size: 32px;
+      margin-bottom: 12px;
+      opacity: 0.5;
+    }
+    
+    /* Error */
+    .error-box {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 12px;
+      color: var(--error);
+      margin: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <div class="logo">
+        <div class="logo-icon">🌊</div>
+        FlowState
+      </div>
+      <div class="header-actions">
+        <div class="status-badge" id="statusBadge">
+          <div class="status-dot"></div>
+          <span id="statusText">Ready</span>
+        </div>
+        <button class="btn btn-primary btn-heal" id="healBtn">
+          ✨ Heal
+        </button>
+      </div>
+    </header>
+    
+    <!-- Main -->
+    <main>
+      <!-- Code Editor -->
+      <div class="editor-panel">
+        <div class="panel-header">
+          <span class="panel-title">Component</span>
+          <button class="btn btn-ghost" id="loadExampleBtn">Load Example</button>
+        </div>
+        <div class="editor-wrapper">
+          <textarea id="codeEditor" placeholder="// Paste your React component here...
+
+export default function MyComponent() {
+  return (
+    <div>
+      Hello World
+    </div>
+  );
+}" spellcheck="false"></textarea>
+        </div>
+      </div>
+      
+      <!-- Live Preview -->
+      <div class="preview-panel">
+        <div class="panel-header">
+          <span class="panel-title">Live Preview</span>
+          <button class="btn btn-ghost" id="refreshBtn">↻ Refresh</button>
+        </div>
+        <div class="preview-wrapper" id="previewWrapper">
+          <iframe id="previewFrame" sandbox="allow-scripts"></iframe>
+          <div class="preview-overlay" id="previewOverlay">
+            <div class="scan-effect"></div>
+            <span class="overlay-text">Analyzing...</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Results Panel -->
+      <div class="results-panel" id="resultsPanel">
+        <div class="results-header" id="resultsHeader">
+          <span class="results-title">
+            Flow Stream
+            <span class="results-count" id="resultsCount" style="display: none;">0</span>
+          </span>
+          <span class="btn btn-ghost" id="toggleResults">▼</span>
+        </div>
+        <div class="results-body" id="resultsBody">
+          <!-- Terminal Log -->
+          <div style="flex: 0.8; display: flex; flex-direction: column;">
+            <div class="terminal" id="terminal">
+              <div class="log-line">🌊 FlowState ready</div>
+              <div class="log-line">   Paste a component and hit Heal</div>
+            </div>
+            
+            <!-- Asset Generation -->
+            <div class="asset-section" id="assetSection" style="display: none;">
+              <strong style="color: var(--accent); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Asset Needed</strong>
+              <p class="asset-prompt" id="assetPrompt"></p>
+              <button class="btn btn-secondary" id="generateAssetBtn" style="width: 100%; font-size: 12px; padding: 8px;">
+                🎨 Generate with Nano Banana
+              </button>
+              <div class="asset-preview" id="assetPreview" style="display: none;">
+                <img id="assetImg" src="">
+              </div>
+            </div>
+          </div>
+          
+          <!-- Defects -->
+          <div class="defects-column" id="defectsColumn" style="display: none;">
+            <div id="defectsList"></div>
+          </div>
+          
+          <!-- Diff -->
+          <div class="diff-column" id="diffColumn" style="display: none;">
+            <div class="diff-block">
+              <div class="diff-header">
+                <span>Changes</span>
+                <span id="diffCount">0 lines</span>
+              </div>
+              <div class="diff-content" id="diffContent"></div>
+              <div class="diff-actions">
+                <button class="btn btn-primary" id="applyBtn" style="flex: 1; font-size: 12px; padding: 8px;">Apply Fix</button>
+                <button class="btn btn-secondary" id="dismissBtn" style="font-size: 12px; padding: 8px;">✕</button>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Empty State -->
+          <div class="empty-state" id="emptyState">
+            <div class="empty-icon">🔍</div>
+            <p>Heal results will appear here</p>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+  
+  <script>
+    const API_BASE = 'http://localhost:3001';
+    
+    // DOM Elements
+    const codeEditor = document.getElementById('codeEditor');
+    const previewFrame = document.getElementById('previewFrame');
+    const previewWrapper = document.getElementById('previewWrapper');
+    const previewOverlay = document.getElementById('previewOverlay');
+    const healBtn = document.getElementById('healBtn');
+    const statusBadge = document.getElementById('statusBadge');
+    const statusText = document.getElementById('statusText');
+    const terminal = document.getElementById('terminal');
+    const resultsPanel = document.getElementById('resultsPanel');
+    const resultsCount = document.getElementById('resultsCount');
+    const defectsColumn = document.getElementById('defectsColumn');
+    const defectsList = document.getElementById('defectsList');
+    const diffColumn = document.getElementById('diffColumn');
+    const diffContent = document.getElementById('diffContent');
+    const diffCount = document.getElementById('diffCount');
+    const applyBtn = document.getElementById('applyBtn');
+    const dismissBtn = document.getElementById('dismissBtn');
+    const assetSection = document.getElementById('assetSection');
+    const assetPrompt = document.getElementById('assetPrompt');
+    const generateAssetBtn = document.getElementById('generateAssetBtn');
+    const assetPreview = document.getElementById('assetPreview');
+    const assetImg = document.getElementById('assetImg');
+    const emptyState = document.getElementById('emptyState');
+    const loadExampleBtn = document.getElementById('loadExampleBtn');
+    const refreshBtn = document.getElementById('refreshBtn');
+    const toggleResults = document.getElementById('toggleResults');
+    const resultsHeader = document.getElementById('resultsHeader');
+    
+    // State
+    let fixedCode = null;
+    let currentAssetPrompt = null;
+    let debounceTimer = null;
+    
+    // Example broken component
+    const EXAMPLE_CODE = `export default function SignupCard() {
+  return (
+    <div style={{
+      background: '#16213e',
+      borderRadius: '12px',
+      padding: '24px',
+      maxWidth: '400px',
+      margin: '40px auto',
+      fontFamily: 'system-ui, sans-serif'
+    }}>
+      <div style={{
+        width: '80px',
+        height: '80px',
+        background: '#2a2a4a',
+        borderRadius: '50%',
+        margin: '0 auto 20px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: '#555',
+        fontSize: '12px'
+      }}>No image</div>
+
+      <h2 style={{
+        margin: '0 0 20px 0',
+        fontSize: '18px',
+        color: 'white'
+      }}>Create Account</h2>
+
+      <div style={{ marginBottom: '16px' }}>
+        <label style={{
+          display: 'block',
+          marginBottom: '8px',
+          fontSize: '14px',
+          color: '#a0a0a0'
+        }}>Email</label>
+        <input
+          type="email"
+          placeholder="you@example.com"
+          style={{
+            width: '100%',
+            padding: '12px 16px',
+            border: '1px solid #3a3a5c',
+            borderRadius: '8px',
+            background: '#0f0f23',
+            color: 'white',
+            fontSize: '16px',
+            boxSizing: 'border-box'
+          }}
+        />
+      </div>
+
+      <div style={{ marginBottom: '16px' }}>
+        <label style={{
+          display: 'block',
+          marginBottom: '8px',
+          fontSize: '14px',
+          color: '#a0a0a0'
+        }}>Password</label>
+        <input
+          type="password"
+          placeholder="••••••••"
+          style={{
+            width: '100%',
+            padding: '12px 16px',
+            border: '1px solid #3a3a5c',
+            borderRadius: '8px',
+            background: '#0f0f23',
+            color: 'white',
+            fontSize: '16px',
+            boxSizing: 'border-box'
+          }}
+        />
+      </div>
+
+      <button style={{
+        background: '#ff6b6b',
+        color: '#333',
+        border: 'none',
+        padding: '8px 12px',
+        borderRadius: '4px',
+        fontSize: '14px',
+        cursor: 'pointer',
+        marginTop: '8px'
+      }}>Sign Up</button>
+    </div>
+  );
+}`;
+    
+    // Helpers
+    function setStatus(status) {
+      statusBadge.className = 'status-badge ' + status;
+      const texts = {
+        '': 'Ready',
+        'inspecting': 'Inspecting...',
+        'healing': 'Healing...',
+        'success': 'Healed',
+        'error': 'Error'
+      };
+      statusText.textContent = texts[status] || 'Ready';
+    }
+    
+    function log(message, type = '') {
+      const line = document.createElement('div');
+      line.className = 'log-line ' + type;
+      line.textContent = message;
+      terminal.appendChild(line);
+      terminal.scrollTop = terminal.scrollHeight;
+    }
+    
+    function clearLog() {
+      terminal.innerHTML = '';
+    }
+    
+    function showResults() {
+      resultsPanel.classList.remove('collapsed');
+      toggleResults.textContent = '▼';
+    }
+    
+    function hideResults() {
+      resultsPanel.classList.add('collapsed');
+      toggleResults.textContent = '▲';
+    }
+    
+    // Live Preview
+    function updatePreview() {
+      const code = codeEditor.value;
+      if (!code.trim()) {
+        previewFrame.srcdoc = '';
+        return;
+      }
+      
+      try {
+        // Transform JSX to JS
+        const transformed = Babel.transform(code, {
+          presets: ['react'],
+          filename: 'component.jsx'
+        }).code;
+        
+        // Create preview HTML
+        const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { 
+      background: #1a1a2e; 
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 20px;
+    }
+    input, button { font-family: inherit; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"><\/script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"><\/script>
+  <script>
+    try {
+      ${transformed}
+      const root = ReactDOM.createRoot(document.getElementById('root'));
+      root.render(React.createElement(typeof exports !== 'undefined' && exports.default ? exports.default : (typeof SignupCard !== 'undefined' ? SignupCard : (typeof MyComponent !== 'undefined' ? MyComponent : () => React.createElement('div', null, 'No component found')))));
+    } catch (e) {
+      document.body.innerHTML = '<pre style="color: #f87171; padding: 20px; font-size: 12px;">' + e.message + '</pre>';
+    }
+  <\/script>
+</body>
+</html>`;
+        
+        previewFrame.srcdoc = html;
+      } catch (e) {
+        console.error('Preview error:', e);
+      }
+    }
+    
+    // Screenshot the preview
+    async function capturePreview() {
+      return new Promise((resolve, reject) => {
+        // Wait for iframe to render
+        setTimeout(async () => {
+          try {
+            const iframe = previewFrame;
+            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+            const canvas = await html2canvas(iframeDoc.body, {
+              backgroundColor: '#1a1a2e',
+              scale: 2,
+              logging: false,
+              useCORS: true
+            });
+            resolve(canvas.toDataURL('image/png').split(',')[1]);
+          } catch (e) {
+            reject(e);
+          }
+        }, 500);
+      });
+    }
+    
+    // Heal Flow
+    async function heal() {
+      const code = codeEditor.value.trim();
+      if (!code) {
+        log('⚠️ No code to heal', 'warning');
+        return;
+      }
+      
+      // Reset UI
+      clearLog();
+      emptyState.style.display = 'none';
+      defectsColumn.style.display = 'none';
+      diffColumn.style.display = 'none';
+      assetSection.style.display = 'none';
+      resultsCount.style.display = 'none';
+      fixedCode = null;
+      currentAssetPrompt = null;
+      
+      showResults();
+      setStatus('inspecting');
+      previewOverlay.classList.add('active');
+      healBtn.disabled = true;
+      
+      log('👁️ Inspector: Capturing preview...');
+      
+      try {
+        // Capture screenshot
+        const screenshot = await capturePreview();
+        log('   Screenshot captured', 'success');
+        
+        log('👁️ Inspector: Analyzing UI...');
+        
+        // Call API
+        const response = await fetch(`${API_BASE}/api/heal`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            screenshot,
+            code,
+            mimeType: 'image/png'
+          })
+        });
+        
+        const result = await response.json();
+        
+        previewOverlay.classList.remove('active');
+        
+        if (result.success) {
+          if (result.looks_good) {
+            setStatus('success');
+            log('✅ No defects found — UI looks good!', 'success');
+            resultsCount.textContent = '✓';
+            resultsCount.className = 'results-count success';
+            resultsCount.style.display = 'inline';
+          } else {
+            setStatus('healing');
+            
+            // Log defects
+            log(`   Found ${result.defects.length} defects`, 'warning');
+            result.defects.forEach((d, i) => {
+              log(`   ${i + 1}. ${d.substring(0, 60)}...`);
+            });
+            
+            log('🩺 Surgeon: Applying fixes...');
+            
+            // Show defects
+            defectsColumn.style.display = 'block';
+            defectsList.innerHTML = result.defects.map(d => `
+              <div class="defect-card slide-in">
+                <div class="defect-dot"></div>
+                ${escapeHtml(d)}
+              </div>
+            `).join('');
+            
+            // Show diff
+            fixedCode = result.fixedCode;
+            if (fixedCode) {
+              const origLines = code.split('\n');
+              const fixedLines = fixedCode.split('\n');
+              const diffs = [];
+              
+              const maxLen = Math.max(origLines.length, fixedLines.length);
+              for (let i = 0; i < maxLen; i++) {
+                if (origLines[i] !== fixedLines[i]) {
+                  if (origLines[i]) diffs.push({ type: 'removed', line: origLines[i] });
+                  if (fixedLines[i]) diffs.push({ type: 'added', line: fixedLines[i] });
+                }
+              }
+              
+              if (diffs.length > 0) {
+                diffColumn.style.display = 'flex';
+                diffCount.textContent = `${diffs.length} lines`;
+                diffContent.innerHTML = diffs.slice(0, 30).map(d => 
+                  `<div class="diff-line diff-${d.type}">${d.type === 'added' ? '+' : '-'} ${escapeHtml(d.line)}</div>`
+                ).join('') + (diffs.length > 30 ? `<div class="diff-line" style="color: var(--text-muted);">... +${diffs.length - 30} more</div>` : '');
+                
+                log(`✨ Surgeon: ${diffs.length} lines changed`, 'success');
+              }
+            }
+            
+            // Show asset prompt
+            if (result.assetPrompt) {
+              currentAssetPrompt = result.assetPrompt;
+              assetSection.style.display = 'block';
+              assetPrompt.textContent = result.assetPrompt;
+              assetPreview.style.display = 'none';
+              log('🎨 Asset generation available', 'accent');
+            }
+            
+            resultsCount.textContent = result.defects.length;
+            resultsCount.className = 'results-count';
+            resultsCount.style.display = 'inline';
+            
+            setStatus('success');
+            log('🚀 Heal complete — review changes below', 'success');
+          }
+        } else {
+          throw new Error(result.error || 'Healing failed');
+        }
+      } catch (e) {
+        setStatus('error');
+        previewOverlay.classList.remove('active');
+        log(`❌ Error: ${e.message}`, 'error');
+      }
+      
+      healBtn.disabled = false;
+    }
+    
+    // Apply fix
+    function applyFix() {
+      if (!fixedCode) return;
+      codeEditor.value = fixedCode;
+      updatePreview();
+      diffColumn.style.display = 'none';
+      fixedCode = null;
+      log('✅ Fix applied — preview updated', 'success');
+    }
+    
+    // Generate asset
+    async function generateAsset() {
+      if (!currentAssetPrompt) return;
+      
+      generateAssetBtn.disabled = true;
+      generateAssetBtn.textContent = '⏳ Generating...';
+      log('🎨 Artist: Generating asset...', 'accent');
+      
+      try {
+        const response = await fetch(`${API_BASE}/api/generate-asset`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt: currentAssetPrompt,
+            context: 'avatar',
+            theme: 'dark'
+          })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success && (result.image || result.url)) {
+          const src = result.image 
+            ? `data:${result.mimeType};base64,${result.image}`
+            : result.url;
+          assetImg.src = src;
+          assetPreview.style.display = 'block';
+          log('✅ Asset generated!', 'success');
+        } else {
+          throw new Error(result.error || 'Generation failed');
+        }
+      } catch (e) {
+        log(`❌ Asset error: ${e.message}`, 'error');
+      }
+      
+      generateAssetBtn.disabled = false;
+      generateAssetBtn.textContent = '🎨 Generate with Nano Banana';
+    }
+    
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+    
+    // Event Listeners
+    codeEditor.addEventListener('input', () => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(updatePreview, 500);
+    });
+    
+    healBtn.addEventListener('click', heal);
+    applyBtn.addEventListener('click', applyFix);
+    dismissBtn.addEventListener('click', () => {
+      diffColumn.style.display = 'none';
+      fixedCode = null;
+    });
+    generateAssetBtn.addEventListener('click', generateAsset);
+    refreshBtn.addEventListener('click', updatePreview);
+    loadExampleBtn.addEventListener('click', () => {
+      codeEditor.value = EXAMPLE_CODE;
+      updatePreview();
+      log('📦 Example component loaded', 'accent');
+    });
+    resultsHeader.addEventListener('click', () => {
+      resultsPanel.classList.toggle('collapsed');
+      toggleResults.textContent = resultsPanel.classList.contains('collapsed') ? '▲' : '▼';
+    });
+    
+    // Init
+    updatePreview();
+  </script>
+</body>
+</html>

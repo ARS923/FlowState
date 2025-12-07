@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Demo 4: Voice Commands | FlowState</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Outfit', system-ui, sans-serif;
+      background: #0A0A0B;
+      color: #FAFAFA;
+      min-height: 100vh;
+    }
+
+    .demo-banner {
+      background: linear-gradient(90deg, #D4FF00 0%, #22C55E 100%);
+      color: #0A0A0B;
+      padding: 8px 16px;
+      font-size: 12px;
+      font-weight: 600;
+      text-align: center;
+    }
+
+    .demo-banner a {
+      color: #0A0A0B;
+      text-decoration: underline;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 48px;
+    }
+
+    .page-header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .page-header h1 {
+      font-size: 36px;
+      margin-bottom: 12px;
+    }
+
+    .page-header p {
+      color: #71717A;
+      font-size: 16px;
+    }
+
+    /* Simple card layout - easy for voice commands */
+    .card-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .card {
+      background: #18181B;
+      border: 1px solid #27272A;
+      border-radius: 12px;
+      padding: 32px;
+    }
+
+    .card-label {
+      font-size: 12px;
+      color: #71717A;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+    }
+
+    .card h2 {
+      font-size: 24px;
+      margin-bottom: 16px;
+    }
+
+    .card p {
+      color: #A1A1AA;
+      font-size: 15px;
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+
+    /* INTENTIONALLY BAD BUTTON - Optimized for voice fix */
+    .bad-cta {
+      display: inline-block;
+      padding: 8px 12px;          /* Too small */
+      background: #444;           /* Boring */
+      border: none;
+      border-radius: 2px;         /* Sharp */
+      color: #999;                /* Low contrast */
+      font-size: 12px;            /* Small */
+      font-family: Arial;
+      cursor: pointer;
+    }
+
+    /* Good button for comparison */
+    .good-cta {
+      display: inline-block;
+      padding: 14px 24px;
+      background: #D4FF00;
+      border: none;
+      border-radius: 8px;
+      color: #0A0A0B;
+      font-size: 15px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .good-cta:hover {
+      transform: translateY(-2px);
+    }
+
+    /* Pricing card with bad spacing */
+    .pricing-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .pricing-left h3 {
+      font-size: 20px;
+      margin-bottom: 4px;
+    }
+
+    .pricing-left .price {
+      font-size: 14px;
+      color: #71717A;
+    }
+
+    /* Feature list with inconsistent spacing */
+    .feature-list {
+      list-style: none;
+    }
+
+    .feature-list li {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid #27272A;
+    }
+
+    .feature-list li:last-child {
+      border-bottom: none;
+    }
+
+    .feature-icon {
+      width: 32px;
+      height: 32px;
+      background: rgba(212, 255, 0, 0.15);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .feature-text {
+      flex: 1;
+    }
+
+    .feature-text strong {
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    .feature-text span {
+      font-size: 13px;
+      color: #71717A;
+    }
+
+    /* Demo instructions - larger for this page */
+    .demo-instructions {
+      position: fixed;
+      bottom: 100px;
+      left: 24px;
+      background: #18181B;
+      border: 1px solid #3F3F46;
+      border-radius: 12px;
+      padding: 20px 24px;
+      max-width: 400px;
+      z-index: 1000;
+    }
+
+    .demo-instructions h3 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: #D4FF00;
+    }
+
+    .demo-instructions ol {
+      font-size: 12px;
+      color: #A1A1AA;
+      padding-left: 16px;
+      line-height: 1.7;
+    }
+
+    .demo-instructions li {
+      margin-bottom: 6px;
+    }
+
+    .demo-instructions code {
+      background: #27272A;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 11px;
+    }
+
+    .voice-prompts {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid #27272A;
+    }
+
+    .voice-prompts h4 {
+      font-size: 12px;
+      color: #818CF8;
+      margin-bottom: 8px;
+    }
+
+    .voice-prompt {
+      background: #27272A;
+      padding: 10px 14px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      font-size: 13px;
+      color: #D4FF00;
+      font-style: italic;
+      border-left: 3px solid #818CF8;
+    }
+
+    .voice-prompt small {
+      display: block;
+      color: #71717A;
+      font-style: normal;
+      margin-top: 4px;
+      font-size: 11px;
+    }
+  </style>
+</head>
+<body>
+  <div class="demo-banner">
+    Demo 4: Voice Commands | <a href="/demos/">Back to Demo Index</a>
+  </div>
+
+  <div class="container">
+    <div class="page-header">
+      <h1>Product Overview</h1>
+      <p>Simple layout optimized for voice command demo</p>
+    </div>
+
+    <div class="card-stack">
+      <!-- Card 1: Bad CTA -->
+      <div class="card" id="target-card-1">
+        <div class="card-label">Getting Started</div>
+        <h2>Start your free trial today</h2>
+        <p>Join thousands of teams already using our platform to build better products faster. No credit card required.</p>
+        <button class="bad-cta" id="target-button">get started</button>
+      </div>
+
+      <!-- Card 2: Pricing -->
+      <div class="card pricing-card" id="target-card-2">
+        <div class="pricing-left">
+          <h3>Pro Plan</h3>
+          <div class="price">$29/month per user</div>
+        </div>
+        <button class="good-cta">Upgrade Now</button>
+      </div>
+
+      <!-- Card 3: Features -->
+      <div class="card" id="target-card-3">
+        <div class="card-label">What's Included</div>
+        <h2>Everything you need</h2>
+        <ul class="feature-list">
+          <li>
+            <div class="feature-icon">🚀</div>
+            <div class="feature-text">
+              <strong>Unlimited Projects</strong>
+              <span>Create as many as you need</span>
+            </div>
+          </li>
+          <li>
+            <div class="feature-icon">👥</div>
+            <div class="feature-text">
+              <strong>Team Collaboration</strong>
+              <span>Real-time sync across your team</span>
+            </div>
+          </li>
+          <li>
+            <div class="feature-icon">🔒</div>
+            <div class="feature-text">
+              <strong>Enterprise Security</strong>
+              <span>SOC 2 & GDPR compliant</span>
+            </div>
+          </li>
+          <li>
+            <div class="feature-icon">📊</div>
+            <div class="feature-text">
+              <strong>Advanced Analytics</strong>
+              <span>Deep insights into usage</span>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="demo-instructions">
+    <h3>Demo Script (Voice Commands)</h3>
+    <ol>
+      <li>Click the <strong>gray "get started" button</strong></li>
+      <li>Click <code>✏️ Annotate</code> to enter annotation mode</li>
+      <li>Hold <code>Space</code> or click <code>🎙️</code> to talk</li>
+      <li>Speak one of the suggested phrases below</li>
+      <li>FlowState transcribes and adds as annotation</li>
+      <li>Click <code>✨ Heal All</code> to fix</li>
+    </ol>
+
+    <div class="voice-prompts">
+      <h4>Recommended Voice Prompts (high success rate)</h4>
+      <div class="voice-prompt">
+        "Make this button bigger with more padding"
+        <small>Triggers: padding, touch-target fixes</small>
+      </div>
+      <div class="voice-prompt">
+        "The corners should be rounded like the other buttons"
+        <small>Triggers: border-radius consistency fix</small>
+      </div>
+      <div class="voice-prompt">
+        "This text is hard to read, needs more contrast"
+        <small>Triggers: contrast/color accessibility fix</small>
+      </div>
+    </div>
+  </div>
+
+  <script src="/flowstate-overlay.js"></script>
+</body>
+</html>

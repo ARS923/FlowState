@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FlowState Demo Launcher</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Outfit', system-ui, sans-serif;
+      background: #0A0A0B;
+      color: #FAFAFA;
+      min-height: 100vh;
+      padding: 48px;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .logo {
+      font-size: 48px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #D4FF00, #22C55E);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 16px;
+    }
+
+    .tagline {
+      font-size: 18px;
+      color: #71717A;
+      margin-bottom: 24px;
+    }
+
+    .secret-hint {
+      display: inline-block;
+      background: #18181B;
+      border: 1px solid #27272A;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 12px;
+      color: #818CF8;
+    }
+
+    .secret-hint code {
+      background: #27272A;
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #D4FF00;
+    }
+
+    .demo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 24px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .demo-card {
+      background: #18181B;
+      border: 1px solid #27272A;
+      border-radius: 16px;
+      padding: 32px;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      color: inherit;
+      display: block;
+    }
+
+    .demo-card:hover {
+      border-color: #D4FF00;
+      transform: translateY(-4px);
+      box-shadow: 0 8px 32px rgba(212, 255, 0, 0.1);
+    }
+
+    .demo-number {
+      font-size: 12px;
+      font-weight: 600;
+      color: #D4FF00;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 12px;
+    }
+
+    .demo-title {
+      font-size: 24px;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    .demo-description {
+      font-size: 14px;
+      color: #A1A1AA;
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+
+    .demo-features {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .demo-feature {
+      background: rgba(212, 255, 0, 0.1);
+      color: #D4FF00;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .demo-feature.voice {
+      background: rgba(129, 140, 248, 0.15);
+      color: #818CF8;
+    }
+
+    .demo-feature.image {
+      background: rgba(34, 197, 94, 0.15);
+      color: #22C55E;
+    }
+
+    .quick-actions {
+      margin-top: 48px;
+      text-align: center;
+    }
+
+    .quick-actions h3 {
+      font-size: 14px;
+      color: #71717A;
+      margin-bottom: 16px;
+      font-weight: 500;
+    }
+
+    .quick-btns {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .quick-btn {
+      background: #27272A;
+      border: 1px solid #3F3F46;
+      color: #FAFAFA;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .quick-btn:hover {
+      background: #3F3F46;
+      border-color: #52525B;
+    }
+
+    .quick-btn.primary {
+      background: #D4FF00;
+      color: #0A0A0B;
+      border-color: #D4FF00;
+      font-weight: 600;
+    }
+
+    .quick-btn.primary:hover {
+      background: #B8E600;
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      max-width: 800px;
+      margin: 48px auto 0;
+      padding-top: 48px;
+      border-top: 1px solid #27272A;
+    }
+
+    .feature-item {
+      text-align: center;
+      padding: 20px;
+    }
+
+    .feature-icon {
+      font-size: 32px;
+      margin-bottom: 12px;
+    }
+
+    .feature-name {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .feature-desc {
+      font-size: 12px;
+      color: #71717A;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">FlowState</div>
+    <div class="tagline">Visual Healing for Vibe Coders</div>
+    <div class="secret-hint">
+      Demo Mode: Press <code>Ctrl+Shift+D</code> for failsafe cached responses
+    </div>
+  </div>
+
+  <div class="demo-grid">
+    <a href="1-ugly-button.html" class="demo-card">
+      <div class="demo-number">Demo 01</div>
+      <div class="demo-title">Ugly Signup Button</div>
+      <div class="demo-description">
+        The classic "ugly button" demo. Click an intentionally broken button to see FlowState detect and fix padding, contrast, and border-radius issues instantly.
+      </div>
+      <div class="demo-features">
+        <span class="demo-feature">Quick Fix</span>
+        <span class="demo-feature">Learn Panel</span>
+        <span class="demo-feature">Variations</span>
+      </div>
+    </a>
+
+    <a href="2-hero-image.html" class="demo-card">
+      <div class="demo-number">Demo 02</div>
+      <div class="demo-title">Hero Image Refresh</div>
+      <div class="demo-description">
+        Click a stale hero image to regenerate it with Nano Banana Pro. Type a description and watch AI generate a fresh, on-brand replacement.
+      </div>
+      <div class="demo-features">
+        <span class="demo-feature image">Nano Banana Pro</span>
+        <span class="demo-feature image">Image Gen</span>
+        <span class="demo-feature">Save Assets</span>
+      </div>
+    </a>
+
+    <a href="3-annotation.html" class="demo-card">
+      <div class="demo-number">Demo 03</div>
+      <div class="demo-title">Annotation & Drawing</div>
+      <div class="demo-description">
+        A messy dashboard with inconsistent padding and colors. Use the annotation tools to circle, box, arrow, and label issues, then batch-heal them all.
+      </div>
+      <div class="demo-features">
+        <span class="demo-feature">Draw Tools</span>
+        <span class="demo-feature">Batch Heal</span>
+        <span class="demo-feature">Undo/Redo</span>
+      </div>
+    </a>
+
+    <a href="4-voice.html" class="demo-card">
+      <div class="demo-number">Demo 04</div>
+      <div class="demo-title">Voice Commands</div>
+      <div class="demo-description">
+        Hold Space to speak. Say "make this button bigger" or "improve the contrast" and watch FlowState transcribe and apply your feedback automatically.
+      </div>
+      <div class="demo-features">
+        <span class="demo-feature voice">Voice Input</span>
+        <span class="demo-feature voice">Speech-to-Fix</span>
+        <span class="demo-feature">Canned Prompts</span>
+      </div>
+    </a>
+
+    <a href="5-broken-frontend.html" class="demo-card">
+      <div class="demo-number">Demo 05</div>
+      <div class="demo-title">Debug Broken Frontend</div>
+      <div class="demo-description">
+        A buggy e-commerce page with intentional JavaScript errors. Use Debug Mode to capture errors, view stack traces, and get AI-powered diagnosis and fixes.
+      </div>
+      <div class="demo-features">
+        <span class="demo-feature" style="background: rgba(239, 68, 68, 0.15); color: #EF4444;">Debug Mode</span>
+        <span class="demo-feature" style="background: rgba(239, 68, 68, 0.15); color: #EF4444;">Error Capture</span>
+        <span class="demo-feature">AI Analysis</span>
+      </div>
+    </a>
+  </div>
+
+  <div class="quick-actions">
+    <h3>Quick Navigation</h3>
+    <div class="quick-btns">
+      <button class="quick-btn primary" onclick="window.location.href='/'">Main App</button>
+      <button class="quick-btn" onclick="toggleDemoMode()">Toggle Demo Mode</button>
+      <button class="quick-btn" onclick="showKeyboardShortcuts()">Shortcuts</button>
+    </div>
+  </div>
+
+  <div class="feature-grid">
+    <div class="feature-item">
+      <div class="feature-icon">⚡</div>
+      <div class="feature-name">Instant Analysis</div>
+      <div class="feature-desc">Local detection + API enhancement</div>
+    </div>
+    <div class="feature-item">
+      <div class="feature-icon">🎨</div>
+      <div class="feature-name">Smart Variations</div>
+      <div class="feature-desc">Multiple fix options to choose from</div>
+    </div>
+    <div class="feature-item">
+      <div class="feature-icon">📚</div>
+      <div class="feature-name">Learn Mode</div>
+      <div class="feature-desc">Understand why fixes are needed</div>
+    </div>
+    <div class="feature-item">
+      <div class="feature-icon">🔄</div>
+      <div class="feature-name">Undo Stack</div>
+      <div class="feature-desc">Revert any change with Ctrl+Z</div>
+    </div>
+  </div>
+
+  <script>
+    function toggleDemoMode() {
+      // This will work on individual demo pages
+      alert('Navigate to a demo page first, then press Ctrl+Shift+D to toggle demo mode.\n\nWhen active, FlowState uses cached "perfect" responses if the API fails.');
+    }
+
+    function showKeyboardShortcuts() {
+      alert(`FlowState Keyboard Shortcuts:
+
+General:
+  Ctrl+Shift+D - Toggle Demo Mode
+  Escape - Exit FlowState mode
+  Ctrl+Z - Undo last change
+
+Annotation Mode:
+  D - Draw tool
+  B - Box tool
+  A - Arrow tool
+  T - Text tool
+  E - Eraser
+  Z - Undo stroke
+
+Voice:
+  Space (hold) - Voice recording
+  Enter - Submit annotation`);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FlowState — Visual Linter</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg-base: #0A0A0B;
+      --bg-elevated: #111113;
+      --bg-sunken: #050506;
+      --border: #27272A;
+      --text-primary: #FAFAFA;
+      --text-secondary: #D4D4D8;
+      --text-muted: #71717A;
+      --text-faint: #52525B;
+      --accent: #D4FF00;
+      --accent-hover: #E8FF4D;
+      --success: #22C55E;
+      --warning: #FBBF24;
+      --error: #EF4444;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg-base);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    
+    /* Animations */
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+    
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(-10px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    @keyframes healPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(212, 255, 0, 0.4); }
+      50% { box-shadow: 0 0 0 12px rgba(212, 255, 0, 0); }
+    }
+    
+    .heal-pulse { animation: healPulse 2s infinite; }
+    .fade-in { animation: fadeIn 0.4s ease forwards; }
+    .slide-in { animation: slideIn 0.3s ease forwards; }
+    
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: var(--bg-base); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-faint); }
+    
+    /* Layout */
+    .container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    
+    header {
+      padding: 20px 32px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-elevated);
+    }
+    
+    .logo {
+      font-family: 'Syne', sans-serif;
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .logo-icon {
+      width: 32px;
+      height: 32px;
+      background: var(--accent);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+    
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      border-radius: 100px;
+      font-size: 13px;
+      font-weight: 500;
+      background: var(--bg-base);
+    }
+    
+    .status-badge.inspecting { background: rgba(251, 191, 36, 0.1); }
+    .status-badge.healing { background: rgba(212, 255, 0, 0.1); }
+    .status-badge.success { background: rgba(34, 197, 94, 0.1); }
+    .status-badge.error { background: rgba(239, 68, 68, 0.1); }
+    
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--text-faint);
+      animation: pulse 2s infinite;
+    }
+    
+    .status-badge.inspecting .status-dot { background: var(--warning); }
+    .status-badge.healing .status-dot { background: var(--accent); }
+    .status-badge.success .status-dot { background: var(--success); }
+    .status-badge.error .status-dot { background: var(--error); }
+    
+    main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 420px;
+      gap: 1px;
+      background: var(--border);
+      overflow: hidden;
+    }
+    
+    /* Preview Panel */
+    .preview-panel {
+      background: var(--bg-base);
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .preview-header {
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    .preview-title {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+    }
+    
+    .preview-canvas {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      background: 
+        radial-gradient(circle at 20% 80%, rgba(212, 255, 0, 0.03) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(212, 255, 0, 0.02) 0%, transparent 50%),
+        var(--bg-sunken);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .preview-canvas img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+    
+    .drop-zone {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .drop-zone.active {
+      background: rgba(212, 255, 0, 0.05);
+    }
+    
+    .drop-zone.hidden { display: none; }
+    
+    .drop-icon {
+      width: 80px;
+      height: 80px;
+      border-radius: 20px;
+      border: 2px dashed var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      color: var(--text-muted);
+      transition: all 0.2s ease;
+    }
+    
+    .drop-zone.active .drop-icon {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    
+    .drop-text {
+      font-size: 15px;
+      color: var(--text-muted);
+      text-align: center;
+      max-width: 280px;
+      line-height: 1.5;
+    }
+    
+    .drop-hint {
+      font-size: 12px;
+      color: var(--text-faint);
+    }
+    
+    /* Control Panel */
+    .control-panel {
+      background: var(--bg-elevated);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    
+    .control-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .control-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    
+    .control-subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    
+    .control-body {
+      flex: 1;
+      overflow: auto;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+    
+    /* Sections */
+    .section {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+    .section-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-muted);
+    }
+    
+    /* Form Elements */
+    textarea {
+      width: 100%;
+      min-height: 120px;
+      padding: 14px 16px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--bg-base);
+      color: var(--text-primary);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      line-height: 1.5;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.15s ease;
+    }
+    
+    textarea:focus {
+      border-color: var(--accent);
+    }
+    
+    textarea::placeholder {
+      color: var(--text-faint);
+    }
+    
+    /* Buttons */
+    .btn {
+      padding: 14px 24px;
+      border-radius: 12px;
+      border: none;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: 'Outfit', sans-serif;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    
+    .btn-primary {
+      background: var(--accent);
+      color: var(--bg-base);
+    }
+    
+    .btn-primary:hover:not(:disabled) {
+      background: var(--accent-hover);
+    }
+    
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .btn-secondary {
+      background: var(--bg-base);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+    }
+    
+    .btn-secondary:hover {
+      border-color: var(--text-muted);
+    }
+    
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-muted);
+      padding: 8px 12px;
+    }
+    
+    .btn-ghost:hover {
+      color: var(--text-primary);
+    }
+    
+    /* Defect Cards */
+    .defect-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .defect-card {
+      background: var(--bg-base);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px 14px 28px;
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--text-secondary);
+      position: relative;
+    }
+    
+    .defect-dot {
+      position: absolute;
+      left: 14px;
+      top: 18px;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--warning);
+    }
+    
+    /* Code Block */
+    .code-block {
+      background: var(--bg-sunken);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    
+    .code-header {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-base);
+    }
+    
+    .code-title {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    
+    .code-content {
+      padding: 16px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      color: var(--text-secondary);
+      max-height: 200px;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    
+    .diff-added {
+      color: var(--success);
+      background: rgba(34, 197, 94, 0.1);
+      padding: 2px 4px;
+      border-radius: 2px;
+    }
+    
+    .diff-removed {
+      color: #F87171;
+      background: rgba(248, 113, 113, 0.1);
+      padding: 2px 4px;
+      border-radius: 2px;
+      text-decoration: line-through;
+    }
+    
+    /* Alert Boxes */
+    .alert {
+      border-radius: 12px;
+      padding: 14px 16px;
+      font-size: 13px;
+    }
+    
+    .alert-error {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: var(--error);
+    }
+    
+    .alert-asset {
+      background: rgba(212, 255, 0, 0.05);
+      border: 1px solid rgba(212, 255, 0, 0.2);
+      color: var(--text-secondary);
+    }
+    
+    .alert-asset strong {
+      color: var(--accent);
+    }
+    
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-muted);
+    }
+    
+    .empty-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+    
+    /* Button Row */
+    .btn-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 8px;
+    }
+    
+    .btn-row .btn { flex: 1; }
+    .btn-row .btn-secondary { flex: 0; }
+    
+    /* Hide file input */
+    input[type="file"] { display: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <div class="logo">
+        <div class="logo-icon">🌊</div>
+        FlowState
+      </div>
+      <div class="status-badge" id="statusBadge">
+        <div class="status-dot"></div>
+        <span id="statusText">Ready</span>
+      </div>
+    </header>
+    
+    <!-- Main -->
+    <main>
+      <!-- Preview Panel -->
+      <div class="preview-panel">
+        <div class="preview-header">
+          <span class="preview-title">Preview</span>
+          <button class="btn btn-ghost" id="clearBtn" style="display: none;">Clear</button>
+        </div>
+        <div class="preview-canvas">
+          <img id="previewImg" src="" alt="" style="display: none;">
+          <div class="drop-zone" id="dropZone">
+            <div class="drop-icon">📸</div>
+            <p class="drop-text">Drop a screenshot of your broken UI, or click to browse</p>
+            <p class="drop-hint">PNG, JPG up to 10MB</p>
+          </div>
+          <input type="file" id="fileInput" accept="image/*">
+        </div>
+      </div>
+      
+      <!-- Control Panel -->
+      <div class="control-panel">
+        <div class="control-header">
+          <h2 class="control-title">Flow Stream</h2>
+          <p class="control-subtitle">Drop a screenshot, paste your code, heal.</p>
+        </div>
+        
+        <div class="control-body">
+          <!-- Code Input -->
+          <div class="section">
+            <label class="section-label">Component Code</label>
+            <textarea id="codeInput" placeholder="Paste your React component here..."></textarea>
+          </div>
+          
+          <!-- Error -->
+          <div class="alert alert-error" id="errorBox" style="display: none;"></div>
+          
+          <!-- Heal Button -->
+          <button class="btn btn-primary" id="healBtn" disabled>
+            ✨ Heal
+          </button>
+          
+          <!-- Defects -->
+          <div class="section" id="defectsSection" style="display: none;">
+            <label class="section-label" id="defectsLabel">Defects Found (0)</label>
+            <div class="defect-list" id="defectsList"></div>
+          </div>
+          
+          <!-- Diff -->
+          <div class="section" id="diffSection" style="display: none;">
+            <label class="section-label">Changes</label>
+            <div class="code-block">
+              <div class="code-header">
+                <span class="code-title" id="diffTitle">0 lines changed</span>
+              </div>
+              <pre class="code-content" id="diffContent"></pre>
+            </div>
+            <div class="btn-row">
+              <button class="btn btn-primary" id="applyBtn">Apply Fix</button>
+              <button class="btn btn-secondary" id="dismissBtn">Dismiss</button>
+            </div>
+          </div>
+          
+          <!-- Asset Prompt -->
+          <div class="section" id="assetSection" style="display: none;">
+            <label class="section-label">Asset Generation</label>
+            <div class="alert alert-asset">
+              <strong>Suggested asset:</strong>
+              <p id="assetPrompt" style="margin-top: 8px; line-height: 1.5;"></p>
+              <button class="btn btn-primary" id="generateAssetBtn" style="margin-top: 12px; width: 100%;">
+                🎨 Generate with Nano Banana
+              </button>
+              <div id="generatedAssetPreview" style="display: none; margin-top: 12px; text-align: center;">
+                <img id="generatedAssetImg" style="max-width: 100%; max-height: 200px; border-radius: 8px; border: 1px solid var(--border);">
+                <a id="downloadAssetLink" download="flowstate-asset.png" style="display: block;">
+                  <button class="btn btn-ghost" style="margin-top: 8px; width: 100%;">
+                    ⬇️ Download Asset
+                  </button>
+                </a>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Empty State -->
+          <div class="empty-state" id="emptyState">
+            <div class="empty-icon">🔍</div>
+            <p>Upload a screenshot and paste your code to begin</p>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+  
+  <script>
+    const API_BASE = 'http://localhost:3001';
+    
+    // DOM Elements
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const previewImg = document.getElementById('previewImg');
+    const clearBtn = document.getElementById('clearBtn');
+    const codeInput = document.getElementById('codeInput');
+    const healBtn = document.getElementById('healBtn');
+    const statusBadge = document.getElementById('statusBadge');
+    const statusText = document.getElementById('statusText');
+    const errorBox = document.getElementById('errorBox');
+    const defectsSection = document.getElementById('defectsSection');
+    const defectsLabel = document.getElementById('defectsLabel');
+    const defectsList = document.getElementById('defectsList');
+    const diffSection = document.getElementById('diffSection');
+    const diffTitle = document.getElementById('diffTitle');
+    const diffContent = document.getElementById('diffContent');
+    const applyBtn = document.getElementById('applyBtn');
+    const dismissBtn = document.getElementById('dismissBtn');
+    const assetSection = document.getElementById('assetSection');
+    const assetPrompt = document.getElementById('assetPrompt');
+    const generateAssetBtn = document.getElementById('generateAssetBtn');
+    const generatedAssetPreview = document.getElementById('generatedAssetPreview');
+    const generatedAssetImg = document.getElementById('generatedAssetImg');
+    const downloadAssetLink = document.getElementById('downloadAssetLink');
+    const emptyState = document.getElementById('emptyState');
+    
+    // State
+    let screenshotData = null;
+    let fixedCode = null;
+    let currentAssetPrompt = null;
+    
+    // Helpers
+    function setStatus(status) {
+      statusBadge.className = 'status-badge ' + status;
+      const texts = {
+        idle: 'Ready',
+        inspecting: 'Inspecting...',
+        healing: 'Healing...',
+        success: 'Healed',
+        error: 'Error'
+      };
+      statusText.textContent = texts[status] || 'Ready';
+    }
+    
+    function updateHealButton() {
+      const canHeal = screenshotData && codeInput.value.trim();
+      healBtn.disabled = !canHeal;
+      if (canHeal) {
+        healBtn.classList.add('heal-pulse');
+      } else {
+        healBtn.classList.remove('heal-pulse');
+      }
+    }
+    
+    function showError(msg) {
+      errorBox.textContent = msg;
+      errorBox.style.display = 'block';
+    }
+    
+    function hideError() {
+      errorBox.style.display = 'none';
+    }
+    
+    function clearResults() {
+      defectsSection.style.display = 'none';
+      diffSection.style.display = 'none';
+      assetSection.style.display = 'none';
+      emptyState.style.display = 'block';
+      fixedCode = null;
+      currentAssetPrompt = null;
+      generatedAssetPreview.style.display = 'none';
+    }
+    
+    // File handling
+    function handleFile(file) {
+      if (!file || !file.type.startsWith('image/')) return;
+      
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        screenshotData = e.target.result;
+        previewImg.src = screenshotData;
+        previewImg.style.display = 'block';
+        dropZone.classList.add('hidden');
+        clearBtn.style.display = 'block';
+        clearResults();
+        hideError();
+        updateHealButton();
+      };
+      reader.readAsDataURL(file);
+    }
+    
+    // Events
+    dropZone.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+    
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('active');
+    });
+    
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.classList.remove('active');
+    });
+    
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('active');
+      handleFile(e.dataTransfer.files[0]);
+    });
+    
+    clearBtn.addEventListener('click', () => {
+      screenshotData = null;
+      previewImg.style.display = 'none';
+      dropZone.classList.remove('hidden');
+      clearBtn.style.display = 'none';
+      clearResults();
+      updateHealButton();
+    });
+    
+    codeInput.addEventListener('input', updateHealButton);
+    
+    // Heal
+    healBtn.addEventListener('click', async () => {
+      if (!screenshotData || !codeInput.value.trim()) return;
+      
+      setStatus('inspecting');
+      hideError();
+      healBtn.disabled = true;
+      healBtn.innerHTML = '<span style="animation: pulse 1s infinite">●</span> Inspecting...';
+      
+      try {
+        const base64Data = screenshotData.split(',')[1];
+        
+        const response = await fetch(`${API_BASE}/api/heal`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            screenshot: base64Data,
+            code: codeInput.value,
+            mimeType: 'image/png'
+          })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          if (result.looks_good) {
+            setStatus('success');
+            emptyState.innerHTML = '<div class="empty-icon">✅</div><p>No defects detected — UI looks good!</p>';
+          } else {
+            setStatus('healing');
+            healBtn.innerHTML = '<span style="animation: pulse 1s infinite">●</span> Healing...';
+            
+            // Show defects
+            emptyState.style.display = 'none';
+            defectsSection.style.display = 'block';
+            defectsLabel.textContent = `Defects Found (${result.defects.length})`;
+            defectsList.innerHTML = result.defects.map((d, i) => `
+              <div class="defect-card slide-in" style="animation-delay: ${i * 0.1}s">
+                <div class="defect-dot"></div>
+                ${d}
+              </div>
+            `).join('');
+            
+            // Show diff
+            fixedCode = result.fixedCode;
+            if (fixedCode) {
+              const origLines = codeInput.value.split('\n');
+              const fixedLines = fixedCode.split('\n');
+              const diffs = [];
+              
+              const maxLen = Math.max(origLines.length, fixedLines.length);
+              for (let i = 0; i < maxLen; i++) {
+                if (origLines[i] !== fixedLines[i]) {
+                  if (origLines[i]) diffs.push({ type: 'removed', line: origLines[i] });
+                  if (fixedLines[i]) diffs.push({ type: 'added', line: fixedLines[i] });
+                }
+              }
+              
+              if (diffs.length > 0) {
+                diffSection.style.display = 'block';
+                diffTitle.textContent = `${diffs.length} lines changed`;
+                diffContent.innerHTML = diffs.slice(0, 20).map(d => 
+                  `<div><span class="diff-${d.type}">${d.type === 'added' ? '+' : '-'} ${escapeHtml(d.line)}</span></div>`
+                ).join('') + (diffs.length > 20 ? `<div style="color: var(--text-muted); margin-top: 8px;">... and ${diffs.length - 20} more</div>` : '');
+              }
+            }
+            
+            // Show asset prompt
+            if (result.assetPrompt) {
+              assetSection.style.display = 'block';
+              assetPrompt.textContent = result.assetPrompt;
+              currentAssetPrompt = result.assetPrompt;
+              generatedAssetPreview.style.display = 'none'; // Reset preview
+            }
+            
+            setTimeout(() => setStatus('success'), 500);
+          }
+        } else {
+          throw new Error(result.error || 'Healing failed');
+        }
+      } catch (e) {
+        setStatus('error');
+        showError(e.message);
+      }
+      
+      healBtn.disabled = false;
+      healBtn.innerHTML = '✨ Heal';
+      updateHealButton();
+    });
+    
+    applyBtn.addEventListener('click', () => {
+      if (fixedCode) {
+        codeInput.value = fixedCode;
+        diffSection.style.display = 'none';
+        fixedCode = null;
+      }
+    });
+    
+    dismissBtn.addEventListener('click', () => {
+      diffSection.style.display = 'none';
+      fixedCode = null;
+    });
+    
+    // Asset Generation
+    generateAssetBtn.addEventListener('click', async () => {
+      if (!currentAssetPrompt) return;
+      
+      generateAssetBtn.disabled = true;
+      generateAssetBtn.innerHTML = '<span style="animation: pulse 1s infinite">●</span> Generating...';
+      
+      try {
+        const response = await fetch(`${API_BASE}/api/generate-asset`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt: currentAssetPrompt,
+            context: 'avatar',
+            theme: 'dark'
+          })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success && result.image) {
+          const dataUrl = `data:${result.mimeType};base64,${result.image}`;
+          generatedAssetImg.src = dataUrl;
+          downloadAssetLink.href = dataUrl;
+          generatedAssetPreview.style.display = 'block';
+        } else if (result.success && result.url) {
+          generatedAssetImg.src = result.url;
+          downloadAssetLink.href = result.url;
+          generatedAssetPreview.style.display = 'block';
+        } else {
+          throw new Error(result.error || 'Asset generation failed');
+        }
+      } catch (e) {
+        showError('Asset generation failed: ' + e.message);
+      }
+      
+      generateAssetBtn.disabled = false;
+      generateAssetBtn.innerHTML = '🎨 Generate with Nano Banana';
+    });
+    
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+  </script>
+</body>
+</html>
