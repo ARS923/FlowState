@@ -193,7 +193,7 @@ const s=document.createElement('script');s.src='http://localhost:3001/flowstate-
 
 ## Team
 
-Built by [Your Name] for the Google Gemini API Developer Competition 2024
+Built by Andrew Smith, Efficient Frontier Labs, FlowState for the Google Gemini API Developer Competition 12.2025
 
 ## License
 
