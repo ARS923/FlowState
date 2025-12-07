@@ -1,14 +1,14 @@
-# FlowState 🌊
+# FlowState 🌊 - WINNER 2nd PLACE - GEMINI HACKATHON
 
 **Visual Healing for Vibe Coders** — Click it. Learn it. Fix it.
 
 > "Stitch helps you start a design. FlowState helps you finish it."
 
-Built for the **Google Gemini API Developer Competition 2024**
+Built for the **Google Gemini API Developer Competition December 2025**
 
 ## Demo Video
 
-[Watch the demo on YouTube](#) <!-- Add your video link here -->
+Demo Video  
 
 ## Built With
 
