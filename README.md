@@ -59,7 +59,7 @@ Visit `http://localhost:3001/demos/` for interactive demos:
 | Demo | Description | Features |
 |------|-------------|----------|
 | **1. Ugly Button** | Fix a broken signup button | Quick Fix, Learn Panel, Variations |
-| **2. Hero Image** | Regenerate stale hero images | Nano Banana Pro, Image Gen |
+| **2. Hero Image** | Regenerate stale hero images | Nano Banana Pro |
 | **3. Annotation** | Draw and batch-heal issues | Draw Tools, Batch Heal |
 | **4. Voice Commands** | Speak your fixes | Voice Input, Speech-to-Fix |
 | **5. Debug Mode** | Fix a broken frontend | Error Capture, AI Analysis |
@@ -180,7 +180,7 @@ const s=document.createElement('script');s.src='http://localhost:3001/flowstate-
 ## Technology Stack
 
 - **Backend**: Node.js + Express
-- **AI**: Google Gemini API (gemini-2.0-flash, imagen-3.0)
+- **AI**: Google Gemini API
 - **Frontend**: Vanilla JavaScript (zero dependencies)
 - **Styling**: CSS-in-JS (injected styles)
 
